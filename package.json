@@ -1,0 +1,11 @@
+{
+  "name": "your-project-name",
+  "version": "1.0.0",
+  "description": "Flask + MongoDB + Tailwind CSS project",
+  "scripts": {
+    "build-css": "tailwindcss build -i static/css/main.css -o static/css/tailwind.css --watch"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.3.5"
+  }
+}
