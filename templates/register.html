@@ -7,31 +7,31 @@
       content="width=device-width, initial-scale=1, shrink-to-fit=no"
     />
     <title>회원가입 - QuizWeek</title>
-    
+
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
+
     <!-- 사용자 정의 색상 추가 -->
     <script>
       tailwind.config = {
         theme: {
           extend: {
             colors: {
-              'primary': '#05D182',
-              'text-dark': '#494949',
-            }
-          }
-        }
-      }
+              primary: "#05D182",
+              "text-dark": "#494949",
+            },
+          },
+        },
+      };
     </script>
-    
+
     <!-- 구글폰트 -->
     <link
       href="https://fonts.googleapis.com/css?family=Stylish&display=swap"
       rel="stylesheet"
     />
   </head>
-  
+
   <body class="bg-gray-100 font-sans">
     <!-- 네비게이션 바 -->
     <nav class="bg-primary text-text-dark shadow-lg">
@@ -39,71 +39,105 @@
         <div class="flex justify-between items-center">
           <div class="text-xl font-bold">QuizWeek</div>
           <div class="space-x-4 flex items-center">
-            <a href="/register" class="hover:text-gray-700 font-medium">회원가입</a>
-            <a href="/" class="bg-black hover:bg-gray-800 px-3 py-1 rounded text-primary text-sm">
+            <a href="/register" class="hover:text-gray-700 font-medium"
+              >회원가입</a
+            >
+            <a
+              href="/"
+              class="bg-black hover:bg-gray-800 px-3 py-1 rounded text-primary text-sm"
+            >
               로그인
             </a>
           </div>
         </div>
       </div>
     </nav>
-    
+
     <!-- 회원가입 폼 -->
     <div class="container mx-auto mt-10 px-4">
       <div class="max-w-md mx-auto bg-white rounded-lg shadow-lg p-6">
         <h2 class="text-2xl font-bold text-text-dark mb-6">회원가입</h2>
-        
-        <form action="/register" method="post">
-          <div class="mb-4">
-            <label for="userid" class="block text-text-dark mb-2">아이디</label>
-            <input
-              type="text"
-              class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-              id="userid"
-              name="userid"
-              required
-            />
-          </div>
-          
-          <div class="mb-4">
-            <label for="userpw" class="block text-text-dark mb-2">비밀번호</label>
-            <input
-              type="password"
-              class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-              id="userpw"
-              name="userpw"
-              required
-            />
-          </div>
-          
-          <div class="mb-6">
-            <label for="nickname" class="block text-text-dark mb-2">닉네임</label>
-            <input
-              type="text"
-              class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-              id="nickname"
-              name="nickname"
-              required
-            />
-          </div>
-          
-          <div class="flex items-center justify-between">
-            <button type="submit" class="bg-black hover:bg-gray-800 text-primary font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
-              회원가입
-            </button>
-            <a href="/" class="bg-gray-300 hover:bg-gray-400 text-text-dark font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
-              취소
-            </a>
-          </div>
-        </form>
-        
+
+        <!-- 아이디 입력 + 중복 확인 버튼 -->
+<div class="mb-4">
+  <label for="userid" class="block text-text-dark mb-2">아이디</label>
+  <form action="/check_userid" method="post" class="flex gap-2">
+    <input
+      type="text"
+      class="flex-1 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+      id="userid"
+      name="userid"
+      value="{{ userid or '' }}"
+      required
+    />
+    <button
+      type="submit"
+      class="bg-gray-600 hover:bg-gray-700 text-white font-bold px-3 py-2 rounded text-sm"
+    >
+      중복확인
+    </button>
+  </form>
+  {% if check_result %}
+  <p
+    class="text-sm mt-1 {{ 'text-red-500' if check_result == '중복된 아이디입니다.' else 'text-green-500' }}"
+  >
+    {{ check_result }}
+  </p>
+  {% endif %}
+</div>
+
+<!-- 아래는 별도의 회원가입 form -->
+<form action="/register" method="post">
+  <!-- 비밀번호 -->
+  <div class="mb-4">
+    <label for="userpw" class="block text-text-dark mb-2">비밀번호</label>
+    <input
+      type="password"
+      class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+      id="userpw"
+      name="userpw"
+      required
+    />
+  </div>
+
+  <!-- 닉네임 -->
+  <div class="mb-6">
+    <label for="nickname" class="block text-text-dark mb-2">닉네임</label>
+    <input
+      type="text"
+      class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+      id="nickname"
+      name="nickname"
+      required
+    />
+  </div>
+
+  <!-- 제출 버튼 -->
+  <div class="flex items-center justify-between">
+    <button
+      type="submit"
+      class="bg-black hover:bg-gray-800 text-primary font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+    >
+      회원가입
+    </button>
+    <a
+      href="/"
+      class="bg-gray-300 hover:bg-gray-400 text-text-dark font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+    >
+      취소
+    </a>
+  </div>
+</form>
+
+
         {% if error %}
-        <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mt-6" role="alert">
+        <div
+          class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mt-6"
+          role="alert"
+        >
           <p>{{ error }}</p>
         </div>
-        {% endif %}
-        
-        {% if success %}
+        {% endif %} {% if success %}
         <script>
           alert("회원가입이 완료되었습니다!");
           window.location.href = "/";
@@ -111,7 +145,7 @@
         {% endif %}
       </div>
     </div>
-    
+
     <!-- 푸터 -->
     <footer class="bg-black text-primary py-2 fixed bottom-0 w-full">
       <div class="container mx-auto px-4 text-center">

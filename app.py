@@ -90,6 +90,19 @@ def register():
     })
     return render_template('register.html', success=True)
 
+@app.route('/check_userid',methods=['POST'])
+def check_userid():
+    check_userid=request.form['userid']
+    existing_user=db.member.find_one({'userid':check_userid})
+    
+    if existing_user:
+        check_result='중복된 아이디입니다'
+    else:
+        check_result='사용 가능한 아이디입니다'
+
+    return render_template('register.html',userid=check_userid, check_result=check_result)
+
+
 # 로그인 후 메인 페이지 - main.html과 연결
 # 오류시 첫 로그인 페이지로 연결 
 # JWT인증 방식으로 로그인 구현 
