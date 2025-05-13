@@ -56,8 +56,8 @@ def register():
     if existing_user==True:
         return render_template('register.html', error = '이미 존재하는 아이디입니다.')
     
-    #DB에 삽입
-    db.member.insert_one({'userid':userid,'userpw':userpw,'nickname':nickname})
+    #DB에 삽입 - 초기 score는 0 포함
+    db.member.insert_one({'userid':userid,'userpw':userpw,'nickname':nickname},'score':0)
     return render_template('register.html',success=True)
 
 # 로그인 후 메인 페이지 - main.html과 연결
@@ -77,6 +77,24 @@ def main():
         return redirect('/')
 
     return redirect('/')
+
+#순위 확인 페이지
+@app.route('/rank')
+def rank():
+    members=list(db.member.find()) #모든멤버 members
+    
+    # 유저 순위 계산
+    total = len(members)
+    rank_position = next((i for i, m in enumerate(members, start=1) if m['userid'] == current_user_id), None)
+    
+
+    
+    
+    return render_template('rank.html',
+                           members=members,
+                           rank_position=rank_position)
+
+
 
 
 
