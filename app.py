@@ -68,9 +68,24 @@ def main():
     token = request.cookies.get('mytoken')
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
-        user = db.member.find_one({'userid': payload['id']})
+        current_user_id = payload['id']
+        user = db.member.find_one({'userid': current_user_id})
+
         if user:
-            return render_template('main.html', nickname=user['nickname'])
+            # 모든 멤버 가져와서 점수순 정렬
+            members = list(db.member.find())
+            members.sort(key=lambda x: x.get('score', 0), reverse=True)
+
+            # 로그인한 유저 순위 계산
+            rank_position = next(
+                (i for i, m in enumerate(members, start=1) if m['userid'] == current_user_id),
+                None
+            )
+
+            return render_template('main.html',
+                                   nickname=user['nickname'],
+                                   members=members,
+                                   rank_position=rank_position)
     except jwt.ExpiredSignatureError:
         return redirect('/')
     except jwt.exceptions.DecodeError:
@@ -78,27 +93,6 @@ def main():
 
     return redirect('/')
 
-#순위 확인 페이지
-@app.route('/rank')
-def rank():
-    token = request.cookies.get('mytoken')
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
-        current_user_id = payload['id']  #  사용자 ID 추출
-
-        # 모든 사용자 가져와서 score 기준 정렬
-        members = list(db.member.find())
-        members.sort(key=lambda x: x.get('score', 0), reverse=True)
-
-        # 현재 사용자 순위 계산
-        rank_position = next(
-            (i for i, m in enumerate(members, start=1) if m['userid'] == current_user_id), None)
-
-        return render_template('rank.html',
-                               members=members,
-                               rank_position=rank_position)
-    except:
-        return redirect('/')
 
 
 
