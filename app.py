@@ -57,7 +57,7 @@ def register():
         return render_template('register.html', error = '이미 존재하는 아이디입니다.')
     
     #DB에 삽입 - 초기 score는 0 포함
-    db.member.insert_one({'userid':userid,'userpw':userpw,'nickname':nickname},'score':0)
+    db.member.insert_one({'userid':userid,'userpw':userpw,'nickname':nickname,'score':0})
     return render_template('register.html',success=True)
 
 # 로그인 후 메인 페이지 - main.html과 연결
