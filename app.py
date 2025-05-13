@@ -23,7 +23,16 @@ def get_user_rank(userid):
     members = list(db.member.find())
     members.sort(key=lambda x: x.get('score', 0), reverse=True)
     rank = next((i for i, m in enumerate(members, start=1) if m['userid'] == userid), None)
-    return members, rank
+    
+    # 점수 통계 계산
+    total_score = sum(member.get('score', 0) for member in members)
+    avg_score = total_score / len(members) if members else 0
+    max_score = max((member.get('score', 0) for member in members), default=10)
+    
+    # 사용자 점수 가져오기
+    user_score = next((member.get('score', 0) for member in members if member['userid'] == userid), 0)
+    
+    return members, rank, user_score, avg_score, max_score
 
 
 ##############################################
@@ -93,12 +102,17 @@ def main():
         user = db.member.find_one({'userid': current_user_id})
 
         if user:
-            members, rank_position = get_user_rank(current_user_id)
+            # 수정된 부분: 사용자 정보와 함께 통계 데이터도 가져오기
+            members, rank_position, user_score, avg_score, max_score = get_user_rank(current_user_id)
             return render_template(
                 'main.html',
                 nickname=user['nickname'],
                 members=members,
-                rank_position=rank_position
+                rank_position=rank_position,
+                user_id=current_user_id,
+                user_score=user_score,
+                avg_score=avg_score,
+                max_score=max_score
             )
     except jwt.ExpiredSignatureError:
         return redirect('/')

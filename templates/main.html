@@ -17,7 +17,7 @@
           extend: {
             colors: {
               'primary': '#05D182',
-              'text-dark': '#494949',
+              'text-dark': '#494949'
             }
           }
         }
@@ -84,6 +84,11 @@
           document
             .getElementById("content-" + tabId)
             .classList.remove("hidden");
+            
+          // 순위 탭이 선택되었을 때 그래프 초기화
+          if(tabId === "ranking") {
+            initScoreGraph();
+          }
         }
 
         // 탭 클릭 이벤트 리스너 등록
@@ -101,6 +106,33 @@
 
         // 초기 탭 설정 (홈)
         switchTab("home");
+        
+        // 점수 그래프 초기화 함수 - 단순화
+        function initScoreGraph() {
+          // 서버에서 받은 데이터 가져오기
+          const userScore = parseInt("{{ user_score | default(0) }}");
+          const avgScore = parseFloat("{{ avg_score | default(0) }}");
+          const maxScore = parseInt("{{ max_score | default(10) }}");
+          
+          // 점수 표시 업데이트
+          document.getElementById('user-score-display').textContent = userScore;
+          document.getElementById('avg-score-display').textContent = avgScore.toFixed(1);
+          
+          // Y축 레이블 업데이트
+          document.getElementById('max-score-label').textContent = maxScore + '점';
+          document.getElementById('label-80').textContent = Math.round(maxScore * 0.8) + '점';
+          document.getElementById('label-60').textContent = Math.round(maxScore * 0.6) + '점';
+          document.getElementById('label-40').textContent = Math.round(maxScore * 0.4) + '점';
+          document.getElementById('label-20').textContent = Math.round(maxScore * 0.2) + '점';
+          
+          // 그래프 높이 비율 계산 (최대 점수 기준)
+          const userBarHeight = (userScore / maxScore * 100);
+          const avgBarHeight = (avgScore / maxScore * 100);
+          
+          // 그래프 높이 설정 - 애니메이션 없이 즉시 적용
+          document.getElementById('user-bar').style.height = userBarHeight + '%';
+          document.getElementById('avg-bar').style.height = avgBarHeight + '%';
+        }
       });
     </script>
     <!-- 네비게이션 바 -->
@@ -191,12 +223,68 @@
         <h2 class="text-3xl font-bold text-center text-text-dark mb-6">
           크래프톤 랭킹
         </h2>
-        {% if rank_position %}
-        <p class="text-center text-primary font-semibold my-4">
-          당신의 현재 순위는 <strong>{{ rank_position }}등</strong> 입니다!
-        </p>
-        {% endif %}
+        
+        <!-- 통계 그래프 및 백분위 섹션 수정 -->
+        <div class="bg-white shadow-md rounded-lg p-6 mb-6 text-center">
+          <h3 class="text-xl font-bold text-text-dark mb-4">점수 비교</h3>
+          
+          <!-- 그래프 컨테이너 - 수정된 구조 -->
+          <div class="flex justify-center pt-2 mb-8">
+            <!-- Y축 레이블 -->
+            <div class="flex flex-col justify-between text-xs text-gray-500 pr-2 h-32">
+              <span id="max-score-label">{{ max_score|default(10) }}점</span>
+              <span id="label-80">{{ (max_score|default(10) * 0.8)|int }}점</span>
+              <span id="label-60">{{ (max_score|default(10) * 0.6)|int }}점</span>
+              <span id="label-40">{{ (max_score|default(10) * 0.4)|int }}점</span>
+              <span id="label-20">{{ (max_score|default(10) * 0.2)|int }}점</span>
+              <span>0점</span>
+            </div>
+            
+            <!-- 그래프 영역 - 텍스트를 바깥으로 분리 -->
+            <div class="ml-4">
+              <!-- 그래프 막대들 -->
+              <div class="flex space-x-12 h-32">
+                <!-- 평균 점수 막대 -->
+                <div class="w-20 bg-gray-100 flex items-end">
+                  <div id="avg-bar" class="w-full bg-gray-500 rounded-t" style="height: 0%"></div>
+                </div>
+                
+                <!-- 사용자 점수 막대 -->
+                <div class="w-20 bg-gray-100 flex items-end">
+                  <div id="user-bar" class="w-full bg-primary rounded-t" style="height: 0%"></div>
+                </div>
+              </div>
+              
+              <!-- 텍스트 라벨 -->
+              <div class="flex space-x-12 mt-2">
+                <div class="w-20 text-xs font-medium text-gray-600 text-center">
+                  평균 <span id="avg-score-display">{{ avg_score|default(0)|round(1) }}</span>점
+                </div>
+                <div class="w-20 text-xs font-medium text-primary text-center">
+                  내 점수 <span id="user-score-display">{{ user_score|default(0) }}</span>점
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- 점수 정보 -->
+          <div class="bg-gray-50 p-4 rounded-lg mb-4 text-center max-w-md mx-auto">
+            {% if rank_position %}
+            <p class="text-lg">
+              <span class="font-bold text-primary">{{ rank_position }}등</span>을 기록했습니다!
+            </p>
+            <p class="text-sm text-gray-600 mt-1">
+              전체 {{ members|length }}명 중에서 {{ rank_position }}등입니다
+            </p>
+            {% else %}
+            <p class="text-lg text-gray-600">
+              로그인하시면 순위 정보를 확인할 수 있습니다
+            </p>
+            {% endif %}
+          </div>
+        </div>
 
+        <!-- 기존 순위 표 -->
         <div class="bg-white shadow-md rounded-lg overflow-hidden">
           <table class="min-w-full">
             <thead>
