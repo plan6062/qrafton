@@ -17,13 +17,51 @@
 </head>
 
 <body class="bg-gray-100 font-sans">
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // 탭 전환 기능 구현
+      const tabButtons = document.querySelectorAll('.tab-button');
+      const tabContents = document.querySelectorAll('.tab-content');
+      
+      function switchTab(tabId) {
+        // 모든 탭 비활성화
+        tabButtons.forEach(button => {
+          button.classList.remove('border-blue-600', 'text-gray-800');
+          button.classList.add('border-transparent', 'text-gray-600');
+        });
+        
+        // 모든 컨텐츠 숨기기
+        tabContents.forEach(content => {
+          content.classList.add('hidden');
+        });
+        
+        // 선택한 탭 활성화
+        document.getElementById('tab-' + tabId).classList.remove('border-transparent', 'text-gray-600');
+        document.getElementById('tab-' + tabId).classList.add('border-blue-600', 'text-gray-800');
+        
+        // 선택한 컨텐츠 표시
+        document.getElementById('content-' + tabId).classList.remove('hidden');
+      }
+      
+      // 탭 클릭 이벤트 리스너 등록
+      document.getElementById('tab-home').addEventListener('click', function() {
+        switchTab('home');
+      });
+      
+      document.getElementById('tab-ranking').addEventListener('click', function() {
+        switchTab('ranking');
+      });
+      
+      // 초기 탭 설정 (홈)
+      switchTab('home');
+    });
+  </script>
   <!-- 네비게이션 바 -->
   <nav class="bg-blue-600 text-white shadow-lg">
     <div class="container mx-auto px-4 py-3">
       <div class="flex justify-between items-center">
         <div class="text-xl font-bold">QuizWeek</div>
         <div class="space-x-4 flex items-center">
-          <a href="/main" class="hover:text-blue-200 font-medium">홈</a>
           {% if nickname %}
             <span class="text-blue-200 mr-2">{{ nickname }}님 환영합니다</span>
             <a href="/logout" class="bg-red-500 hover:bg-red-600 px-3 py-1 rounded text-sm">로그아웃</a>
@@ -35,17 +73,28 @@
       </div>
     </div>
   </nav>
+  
+  <!-- 탭 메뉴 -->
+  <div class="bg-gray-200 shadow-md">
+    <div class="container mx-auto">
+      <div class="flex">
+        <button id="tab-home" class="px-6 py-3 font-medium text-gray-800 focus:outline-none border-b-2 border-blue-600 tab-button">홈</button>
+        <button id="tab-ranking" class="px-6 py-3 font-medium text-gray-600 focus:outline-none border-b-2 border-transparent tab-button">순위</button>
+      </div>
+    </div>
+  </div>
 
   <!-- 메인 컨텐츠 -->
   <div class="container mx-auto px-4 py-8">
-    <div class="max-w-2xl mx-auto text-center">
+    <!-- 홈 탭 콘텐츠 -->
+    <div id="content-home" class="tab-content max-w-2xl mx-auto text-center">
       <!-- 로고 또는 큰 Q -->
       <div class="text-9xl font-bold text-blue-600 mb-8">Q</div>
       
-      <h1 class="text-4xl font-bold text-gray-800 mb-6">퀴즈 주간에 오신 것을 환영합니다!</h1>
+      <h1 class="text-4xl font-bold text-gray-800 mb-6">QuizWeek에 오신 것을 환영합니다!</h1>
       
       <p class="text-xl text-gray-600 mb-8">
-        다양한 지식을 테스트하고 다른 사용자들과 순위를 겨뤄보세요.
+        크래프톤 정글에서 배운 지식을 테스트하고 다른 사용자들과 순위를 겨뤄보세요.
       </p>
       
       <!-- 시작하기 버튼 -->
@@ -53,12 +102,47 @@
         시작하기
       </a>
     </div>
+    
+    <!-- 순위 탭 콘텐츠 -->
+    <div id="content-ranking" class="tab-content max-w-4xl mx-auto hidden">
+      <h2 class="text-3xl font-bold text-center text-gray-800 mb-6">크래프톤 랭킹</h2>
+      
+      <div class="bg-white shadow-md rounded-lg overflow-hidden">
+        <table class="min-w-full">
+          <thead>
+            <tr class="bg-gray-100 text-gray-600 uppercase text-sm leading-normal">
+              <th class="py-3 px-6 text-left">순위</th>
+              <th class="py-3 px-6 text-left">닉네임</th>
+              <th class="py-3 px-6 text-center">정답 개수</th>
+            </tr>
+          </thead>
+          <tbody class="text-gray-600 text-sm">
+            <tr class="border-b border-gray-200 hover:bg-gray-50">
+              <td class="py-3 px-6 text-left whitespace-nowrap">1</td>
+              <td class="py-3 px-6 text-left">고양이</td>
+              <td class="py-3 px-6 text-center">23</td>
+            </tr>
+            <tr class="border-b border-gray-200 hover:bg-gray-50">
+              <td class="py-3 px-6 text-left whitespace-nowrap">2</td>
+              <td class="py-3 px-6 text-left">강아지</td>
+              <td class="py-3 px-6 text-center">21</td>
+            </tr>
+            <tr class="border-b border-gray-200 hover:bg-gray-50">
+              <td class="py-3 px-6 text-left whitespace-nowrap">3</td>
+              <td class="py-3 px-6 text-left">다람쥐</td>
+              <td class="py-3 px-6 text-center">20</td>
+            </tr>
+  
+          </tbody>
+        </table>
+      </div>
+    </div>
   </div>
 
   <!-- 푸터 -->
   <footer class="bg-gray-800 text-white py-6 mt-12">
     <div class="container mx-auto px-4 text-center">
-      <p>&copy; 2025 QuizWeek. All rights reserved.</p>
+      <p>&copy; QuizWeek. 크래프톤 정글 9기 4팀.</p>
     </div>
   </footer>
 </body>
