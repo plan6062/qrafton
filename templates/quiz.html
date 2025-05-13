@@ -37,6 +37,17 @@
     
     <script>
       document.addEventListener("DOMContentLoaded", function() {
+        // 문제 카운트 초기화 (세션 스토리지 사용)
+        if (!sessionStorage.getItem('quizCount')) {
+          sessionStorage.setItem('quizCount', '1');
+          // 틀린 문제 배열 초기화
+          sessionStorage.setItem('wrongQuestions', JSON.stringify([]));
+        }
+        
+        // 현재 문제 번호 표시
+        const currentCount = parseInt(sessionStorage.getItem('quizCount'));
+        document.getElementById('question-count').textContent = currentCount;
+        
         // 답변 제출 처리
         const answerForm = document.getElementById("answer-form");
         
@@ -45,6 +56,8 @@
           
           const userAnswer = document.getElementById("user-answer").value.trim();
           const correctAnswer = document.getElementById("correct-answer").value.trim();
+          const questionId = document.getElementById("question-id").value;
+          const questionText = document.querySelector(".bg-gray-50 p").textContent;
           const resultDiv = document.getElementById("result");
           const nextButton = document.getElementById("next-button");
           
@@ -56,12 +69,6 @@
               </div>
             `;
             
-            // 정답일 경우 다음 문제 버튼 표시
-            nextButton.classList.remove("hidden");
-            
-            // 제출 버튼 숨기기
-            document.getElementById("submit-button").classList.add("hidden");
-            
             // 정답 처리를 위한 AJAX 요청
             fetch('/quiz/answer', {
               method: 'POST',
@@ -69,7 +76,7 @@
                 'Content-Type': 'application/json',
               },
               body: JSON.stringify({
-                question_id: document.getElementById("question-id").value,
+                question_id: questionId,
                 is_correct: true
               }),
             });
@@ -81,11 +88,15 @@
               </div>
             `;
             
-            // 오답일 경우에도 다음 문제 버튼 표시
-            nextButton.classList.remove("hidden");
-            
-            // 제출 버튼 숨기기
-            document.getElementById("submit-button").classList.add("hidden");
+            // 오답일 경우 틀린 문제 저장
+            const wrongQuestions = JSON.parse(sessionStorage.getItem('wrongQuestions') || '[]');
+            wrongQuestions.push({
+              id: questionId,
+              question: questionText,
+              answer: correctAnswer,
+              userAnswer: userAnswer
+            });
+            sessionStorage.setItem('wrongQuestions', JSON.stringify(wrongQuestions));
             
             // 오답 처리를 위한 AJAX 요청
             fetch('/quiz/answer', {
@@ -94,10 +105,49 @@
                 'Content-Type': 'application/json',
               },
               body: JSON.stringify({
-                question_id: document.getElementById("question-id").value,
+                question_id: questionId,
                 is_correct: false
               }),
             });
+          }
+          
+          // 제출 버튼 숨기기
+          document.getElementById("submit-button").classList.add("hidden");
+          
+          // 문제 카운트 확인하여 다음 동작 결정
+          const newCount = currentCount + 1;
+          
+          if (newCount > 5) {
+            // 5문제 완료 시 결과 페이지로 이동
+            nextButton.href = "/quiz/finish";
+            nextButton.textContent = "결과 보기";
+          } else {
+            // 아직 5문제 미만일 경우 다음 문제로
+            nextButton.href = "/quiz/start";
+            nextButton.textContent = "다음 문제";
+          }
+          
+          // 다음 문제 버튼 표시
+          nextButton.classList.remove("hidden");
+          
+          // 문제 카운트 증가
+          sessionStorage.setItem('quizCount', newCount.toString());
+        });
+        
+        // 결과 페이지로 이동 시 틀린 문제 정보 전달
+        document.getElementById("next-button").addEventListener("click", function(e) {
+          if (this.href.includes("/quiz/finish")) {
+            // 틀린 문제 정보를 서버에 저장
+            const wrongQuestions = sessionStorage.getItem('wrongQuestions');
+            if (wrongQuestions) {
+              fetch('/quiz/save_wrong', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: wrongQuestions
+              });
+            }
           }
         });
       });
@@ -136,8 +186,11 @@
     <!-- 퀴즈 컨텐츠 -->
     <div class="container mx-auto px-4 py-8 mb-12">
       <div class="max-w-2xl mx-auto bg-white rounded-lg shadow-lg p-6">
-        <!-- 퀴즈 아이콘 -->
-        <div class="text-6xl font-bold text-primary mb-6 text-center">Q</div>
+        <!-- 퀴즈 아이콘 및 카운트 -->
+        <div class="flex justify-between items-center mb-4">
+          <div class="text-6xl font-bold text-primary">Q</div>
+          <div class="text-xl font-bold text-text-dark">문제 <span id="question-count">1</span>/5</div>
+        </div>
         
         <h1 class="text-2xl font-bold text-text-dark mb-6 text-center">퀴즈 문제</h1>
         

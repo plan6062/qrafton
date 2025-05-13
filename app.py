@@ -1,15 +1,16 @@
 import jwt
 import datetime
-from flask import Flask, render_template, jsonify, request,redirect,make_response
+from flask import Flask, render_template, jsonify, request, redirect, make_response
 from pymongo import MongoClient
 import random
+import json
 
-SECRET_KEY="your_secret_key"
+SECRET_KEY = "your_secret_key"
   
   
 app = Flask(__name__)
 #client = MongoClient('mongodb://아이디:비번번@52.78.119.209', 27017)
-client=MongoClient('localhost',27017)
+client = MongoClient('localhost', 27017)
 
 db = client.quiz  # 'quiz' 라는 DB
 #컬렉션은 (member,question,answer,rank 등 예정 )
@@ -22,9 +23,6 @@ def get_user_rank(userid):
     return members, rank
 
 
-
-#ddddddddd
-
 ##############################################
 
 
@@ -35,45 +33,50 @@ def home():
 
 
 # 로그인 페이지 
-@app.route('/login',methods=['POST']) 
+@app.route('/login', methods=['POST']) 
 def login():
-    
-    userid= request.form['userid']
-    userpw= request.form['userpw']
-    user= db.member.find_one({'userid':userid,'userpw':userpw})
+    userid = request.form['userid']
+    userpw = request.form['userpw']
+    user = db.member.find_one({'userid': userid, 'userpw': userpw})
 
-    #로그인 성공시 메인페이지로 이동
+    # 로그인 성공시 메인페이지로 이동
     if user:
-        payload={
-            'id':userid,
-            'exp':datetime.datetime.utcnow()+datetime.timedelta(hours=1)
+        payload = {
+            'id': userid,
+            'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=1)
         }
-        token = jwt.encode(payload,SECRET_KEY,algorithm='HS256')
-        response=make_response(redirect('/main'))
-        response.set_cookie('mytoken',token)
+        token = jwt.encode(payload, SECRET_KEY, algorithm='HS256')
+        response = make_response(redirect('/main'))
+        response.set_cookie('mytoken', token)
         return response
     else:
         return render_template('index.html', error='아이디 또는 비밀번호 오류')
 
-#회원가입 폼으로 이동 /GET
+# 회원가입 폼으로 이동 /GET
 @app.route('/register', methods=['GET'])
 def register_form():
     return render_template('register.html')
 
-#회원가입 처리  /POST
+# 회원가입 처리 /POST
 @app.route('/register', methods=['POST'])
 def register():
-    userid= request.form['userid']
-    userpw= request.form['userpw']
-    nickname=request.form['nickname']
+    userid = request.form['userid']
+    userpw = request.form['userpw']
+    nickname = request.form['nickname']
     
-    existing_user=db.member.find_one({'userid':userid})
-    if existing_user==True:
-        return render_template('register.html', error = '이미 존재하는 아이디입니다.')
+    existing_user = db.member.find_one({'userid': userid})
+    if existing_user:
+        return render_template('register.html', error='이미 존재하는 아이디입니다.')
     
-    #DB에 삽입 - 초기 score는 0 포함
-    db.member.insert_one({'userid':userid,'userpw':userpw,'nickname':nickname,'score':0})
-    return render_template('register.html',success=True)
+    # DB에 삽입 - 초기 score는 0 포함
+    db.member.insert_one({
+        'userid': userid,
+        'userpw': userpw,
+        'nickname': nickname,
+        'score': 0,
+        'wrong_questions': []  # 틀린 문제를 저장할 배열 추가
+    })
+    return render_template('register.html', success=True)
 
 # 로그인 후 메인 페이지 - main.html과 연결
 # 오류시 첫 로그인 페이지로 연결 
@@ -100,17 +103,86 @@ def main():
         return redirect('/')
 
     return redirect('/')
+
 ####################################################################
 
-#퀴즈 시작 부분
+# 퀴즈 시작 부분
 @app.route('/quiz/start')
 def quiz_start():
-    quiz_list=list(db.quiz_list.find())  # quiz 컬렉션
-    quiz = random.choice(quiz_list)  # 랜덤으로 문제 하나 선택
-    
-    return render_template("quiz.html",quiz=quiz)
+    token = request.cookies.get('mytoken')
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
+        current_user_id = payload['id']
+        user = db.member.find_one({'userid': current_user_id})
+        
+        if not user:
+            return redirect('/')
+            
+        # 세션에 퀴즈 카운트가 없으면 사용자의 퀴즈 기록 초기화
+        quiz_list = list(db.quiz_list.find())  # quiz 컬렉션
+        quiz = random.choice(quiz_list)  # 랜덤으로 문제 하나 선택
+        
+        return render_template("quiz.html", quiz=quiz, nickname=user['nickname'])
+    except:
+        return redirect('/')
 
-#퀴즈 완료 부분
+# 퀴즈 답변 제출 처리
+@app.route('/quiz/answer', methods=['POST'])
+def quiz_answer():
+    data = request.json
+    token = request.cookies.get('mytoken')
+    
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
+        current_user_id = payload['id']
+        user = db.member.find_one({'userid': current_user_id})
+        
+        if user:
+            if data.get('is_correct'):
+                # 정답인 경우 점수 증가
+                db.member.update_one(
+                    {'userid': current_user_id},
+                    {'$inc': {'score': 1}}
+                )
+            
+            # 답변 기록 저장
+            db.answers.insert_one({
+                'userid': current_user_id,
+                'question_id': data.get('question_id'),
+                'is_correct': data.get('is_correct'),
+                'timestamp': datetime.datetime.now()
+            })
+            
+            return jsonify({'status': 'success'})
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)})
+    
+    return jsonify({'status': 'error'})
+
+# 틀린 문제 저장
+@app.route('/quiz/save_wrong', methods=['POST'])
+def save_wrong():
+    data = request.json
+    token = request.cookies.get('mytoken')
+    
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
+        current_user_id = payload['id']
+        
+        # 틀린 문제 기록 저장
+        if data:
+            db.member.update_one(
+                {'userid': current_user_id},
+                {'$set': {'wrong_questions': data}}
+            )
+        
+        return jsonify({'status': 'success'})
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)})
+    
+    return jsonify({'status': 'error'})
+
+# 퀴즈 완료 부분
 @app.route('/quiz/finish')
 def quiz_finish():
     token = request.cookies.get('mytoken')
@@ -132,11 +204,15 @@ def quiz_finish():
                 (i for i, m in enumerate(members, start=1) if m['userid'] == current_user_id),
                 None
             )
-
+            
+            # 틀린 문제 정보 가져오기
+            wrong_questions = user.get('wrong_questions', [])
+            
             return render_template("quiz_finish.html",
-                                   nickname=nickname,
-                                   correct_cnt=correct_cnt,
-                                   my_rank=my_rank)
+                                  nickname=nickname,
+                                  correct_cnt=correct_cnt,
+                                  my_rank=my_rank,
+                                  wrong_questions=wrong_questions)
     except jwt.ExpiredSignatureError:
         return redirect('/main')
     except jwt.exceptions.DecodeError:
@@ -144,8 +220,13 @@ def quiz_finish():
 
     return redirect('/main')
 
+# 로그아웃
+@app.route('/logout')
+def logout():
+    response = make_response(redirect('/'))
+    response.delete_cookie('mytoken')
+    return response
 
 
-
-if __name__=='__main__':
+if __name__ == '__main__':
     app.run(debug=True)
