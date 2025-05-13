@@ -1,13 +1,81 @@
-from flask import Flask, render_template
-from flask_pymongo import PyMongo
-
+import jwt
+import datetime
+from flask import Flask, render_template, jsonify, request,redirect,make_response
+from pymongo import MongoClient
+  
+SECRET_KEY="your_secret_key"
+  
+  
 app = Flask(__name__)
-app.config["MONGO_URI"] = "mongodb://localhost:27017/myDatabase"
-mongo = PyMongo(app)
+#client = MongoClient('mongodb://아이디:비번번@52.78.119.209', 27017)
+client=MongoClient('localhost',27017)
+
+db = client.quiz  # 'quiz' 라는 DB
+#컬렉션은 (member,problem,answer,rank 등 예정 )
 
 @app.route('/')
-def hello_world():
-    return render_template('index.html', title="Hello World")
+def home():
+    return render_template('index.html')
 
-if __name__ == '__main__':
+
+# 로그인 페이지 
+@app.route('/login',methods=['POST']) 
+def login():
+    
+    userid= request.form['userid']
+    userpw= request.form['userpw']
+    user= db.member.find_one({'userid':userid,'userpw':userpw})
+
+    if user:
+        payload={
+            'id':userid,
+            'exp':datetime.datetime.utcnow()+datetime.timedelta(hours=1)
+            
+            
+            
+        }
+        token = jwt.encode(payload,SECRET_KEY,algorithm='HS256')
+        response=make_response(redirect('/main'))
+        response.set_cookie('mytoken',token)
+        return response
+    else:
+        return render_template('index.html', error='아이디 또는 비밀번호 오류')
+
+#회원가입 폼으로 이동 /GET
+@app.route('/register', methods=['GET'])
+def register_form():
+    return render_template('register.html')
+
+#회원가입 처리  /POST
+@app.route('/register', methods=['POST'])
+def register():
+    userid= request.form['userid']
+    userpw= request.form['userpw']
+    nickname=request.form['nickname']
+    
+    existing_user=db.member.find_one({'userid':userid})
+    if existing_user==True:
+        return render_template('register.html', error = '이미 존재하는 아이디입니다.')
+    
+    #DB에 삽입
+    db.member.insert_one({'userid':userid,'userpw':userpw,'nickname':nickname})
+    return redirect('/')
+
+# 로그인 후 메인 페이지
+@app.route('/main')
+def main():
+    token = request.cookies.get('mytoken')
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
+        user = db.member.find_one({'userid': payload['id']})
+        if user:
+            return render_template('main.html', nickname=user['nickname'])
+    except jwt.ExpiredSignatureError:
+        return redirect('/')
+    except jwt.exceptions.DecodeError:
+        return redirect('/')
+
+    return redirect('/')
+
+if __name__=='__main__':
     app.run(debug=True)
