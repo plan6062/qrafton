@@ -11,7 +11,7 @@ app = Flask(__name__)
 client=MongoClient('localhost',27017)
 
 db = client.quiz  # 'quiz' 라는 DB
-#컬렉션은 (member,problem,answer,rank 등 예정 )
+#컬렉션은 (member,question,answer,rank 등 예정 )
 
 # 첫 로그인 페이지 
 @app.route('/')
@@ -93,8 +93,10 @@ def main():
 
     return redirect('/')
 
-
-
+#퀴즈 시작 부분
+@app.route('/start')
+def start():
+    
 
 
 
