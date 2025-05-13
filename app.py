@@ -94,9 +94,11 @@ def main():
     return redirect('/')
 
 #퀴즈 시작 부분
-@app.route('/start')
+@app.route('/quiz/start')
 def start():
+    quiz=list(db.quiz_list.find())  # quiz 컬렉션
     
+    return render_template("quiz.html",quiz=quiz)
 
 
 
