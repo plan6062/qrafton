@@ -4,8 +4,9 @@ from flask import Flask, render_template, jsonify, request, redirect, make_respo
 from pymongo import MongoClient
 import random
 import json
+import secrets
 
-SECRET_KEY = "your_secret_key"
+SECRET_KEY = secrets.token_hex(32)
   
   
 app = Flask(__name__)
