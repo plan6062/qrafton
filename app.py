@@ -100,7 +100,7 @@ def main():
         return redirect('/')
 
     return redirect('/')
-
+####################################################################
 
 #퀴즈 시작 부분
 @app.route('/quiz/start')
