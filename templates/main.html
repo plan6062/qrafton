@@ -1,167 +1,220 @@
 <!DOCTYPE html>
 <html lang="ko">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
-  
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  
-  <!-- JS -->
-  <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
-  
-  <!-- 구글폰트 -->
-  <link href="https://fonts.googleapis.com/css?family=Stylish&display=swap" rel="stylesheet" />
-  
-  <title>QuizWeek</title>
-</head>
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, shrink-to-fit=no"
+    />
 
-<body class="bg-gray-100 font-sans">
-  <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      // 탭 전환 기능 구현
-      const tabButtons = document.querySelectorAll('.tab-button');
-      const tabContents = document.querySelectorAll('.tab-content');
-      const tabIndicators = document.querySelectorAll('.tab-indicator');
-      
-      function switchTab(tabId) {
-        // 모든 탭 비활성화
-        tabButtons.forEach(button => {
-          button.classList.remove('text-gray-800');
-          button.classList.add('text-gray-600');
-        });
-        
-        // 모든 탭 인디케이터 비활성화
-        tabIndicators.forEach(indicator => {
-          indicator.classList.remove('bg-blue-600');
-          indicator.classList.add('bg-transparent');
-        });
-        
-        // 모든 컨텐츠 숨기기
-        tabContents.forEach(content => {
-          content.classList.add('hidden');
-        });
-        
-        // 선택한 탭 활성화
-        document.getElementById('tab-' + tabId).classList.remove('text-gray-600');
-        document.getElementById('tab-' + tabId).classList.add('text-gray-800');
-        
-        // 선택한 탭의 인디케이터 활성화
-        document.getElementById('tab-' + tabId).querySelector('.tab-indicator').classList.remove('bg-transparent');
-        document.getElementById('tab-' + tabId).querySelector('.tab-indicator').classList.add('bg-blue-600');
-        
-        // 선택한 컨텐츠 표시
-        document.getElementById('content-' + tabId).classList.remove('hidden');
-      }
-      
-      // 탭 클릭 이벤트 리스너 등록
-      document.getElementById('tab-home').addEventListener('click', function() {
-        switchTab('home');
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- JS -->
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+
+    <!-- 구글폰트 -->
+    <link
+      href="https://fonts.googleapis.com/css?family=Stylish&display=swap"
+      rel="stylesheet"
+    />
+
+    <title>QuizWeek</title>
+  </head>
+
+  <body class="bg-gray-100 font-sans">
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        // 탭 전환 기능 구현
+        const tabButtons = document.querySelectorAll(".tab-button");
+        const tabContents = document.querySelectorAll(".tab-content");
+        const tabIndicators = document.querySelectorAll(".tab-indicator");
+
+        function switchTab(tabId) {
+          // 모든 탭 비활성화
+          tabButtons.forEach((button) => {
+            button.classList.remove("text-gray-800");
+            button.classList.add("text-gray-600");
+          });
+
+          // 모든 탭 인디케이터 비활성화
+          tabIndicators.forEach((indicator) => {
+            indicator.classList.remove("bg-blue-600");
+            indicator.classList.add("bg-transparent");
+          });
+
+          // 모든 컨텐츠 숨기기
+          tabContents.forEach((content) => {
+            content.classList.add("hidden");
+          });
+
+          // 선택한 탭 활성화
+          document
+            .getElementById("tab-" + tabId)
+            .classList.remove("text-gray-600");
+          document
+            .getElementById("tab-" + tabId)
+            .classList.add("text-gray-800");
+
+          // 선택한 탭의 인디케이터 활성화
+          document
+            .getElementById("tab-" + tabId)
+            .querySelector(".tab-indicator")
+            .classList.remove("bg-transparent");
+          document
+            .getElementById("tab-" + tabId)
+            .querySelector(".tab-indicator")
+            .classList.add("bg-blue-600");
+
+          // 선택한 컨텐츠 표시
+          document
+            .getElementById("content-" + tabId)
+            .classList.remove("hidden");
+        }
+
+        // 탭 클릭 이벤트 리스너 등록
+        document
+          .getElementById("tab-home")
+          .addEventListener("click", function () {
+            switchTab("home");
+          });
+
+        document
+          .getElementById("tab-ranking")
+          .addEventListener("click", function () {
+            switchTab("ranking");
+          });
+
+        // 초기 탭 설정 (홈)
+        switchTab("home");
       });
-      
-      document.getElementById('tab-ranking').addEventListener('click', function() {
-        switchTab('ranking');
-      });
-      
-      // 초기 탭 설정 (홈)
-      switchTab('home');
-    });
-  </script>
-  <!-- 네비게이션 바 -->
-  <nav class="bg-blue-600 text-white shadow-lg">
-    <div class="container mx-auto px-4 py-3">
-      <div class="flex justify-between items-center">
-        <div class="text-xl font-bold">QuizWeek</div>
-        <div class="space-x-4 flex items-center">
-          {% if nickname %}
+    </script>
+    <!-- 네비게이션 바 -->
+    <nav class="bg-blue-600 text-white shadow-lg">
+      <div class="container mx-auto px-4 py-3">
+        <div class="flex justify-between items-center">
+          <div class="text-xl font-bold">QuizWeek</div>
+          <div class="space-x-4 flex items-center">
+            {% if nickname %}
             <span class="text-blue-200 mr-2">{{ nickname }}님 환영합니다</span>
-            <a href="/logout" class="bg-red-500 hover:bg-red-600 px-3 py-1 rounded text-sm">로그아웃</a>
-          {% else %}
-            <a href="/register" class="hover:text-blue-200 font-medium">회원가입</a>
-            <a href="/" class="bg-green-500 hover:bg-green-600 px-3 py-1 rounded text-sm">로그인</a>
-          {% endif %}
+            <a
+              href="/logout"
+              class="bg-red-500 hover:bg-red-600 px-3 py-1 rounded text-sm"
+              >로그아웃</a
+            >
+            {% else %}
+            <a href="/register" class="hover:text-blue-200 font-medium"
+              >회원가입</a
+            >
+            <a
+              href="/"
+              class="bg-green-500 hover:bg-green-600 px-3 py-1 rounded text-sm"
+              >로그인</a
+            >
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- 탭 메뉴 -->
+    <div class="bg-gray-200 shadow-md">
+      <div class="container mx-auto px-0">
+        <div class="flex justify-center relative">
+          <div
+            class="absolute h-full border-r border-gray-400"
+            style="left: 50%"
+          ></div>
+          <button
+            id="tab-home"
+            class="w-1/2 py-3 font-medium text-gray-800 focus:outline-none tab-button text-center relative"
+          >
+            문제 풀이
+            <div
+              class="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600 tab-indicator"
+            ></div>
+          </button>
+          <button
+            id="tab-ranking"
+            class="w-1/2 py-3 font-medium text-gray-600 focus:outline-none tab-button text-center relative"
+          >
+            순위
+            <div
+              class="absolute bottom-0 left-0 w-full h-0.5 bg-transparent tab-indicator"
+            ></div>
+          </button>
         </div>
       </div>
     </div>
-  </nav>
-  
-  <!-- 탭 메뉴 -->
-  <div class="bg-gray-200 shadow-md">
-    <div class="container mx-auto px-0">
-      <div class="flex justify-center relative">
-        <div class="absolute h-full border-r border-gray-400" style="left: 50%;"></div>
-        <button id="tab-home" class="w-1/2 py-3 font-medium text-gray-800 focus:outline-none tab-button text-center relative">
-          문제 풀이
-          <div class="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600 tab-indicator"></div>
-        </button>
-        <button id="tab-ranking" class="w-1/2 py-3 font-medium text-gray-600 focus:outline-none tab-button text-center relative">
-          순위
-          <div class="absolute bottom-0 left-0 w-full h-0.5 bg-transparent tab-indicator"></div>
-        </button>
+
+    <!-- 메인 컨텐츠 -->
+    <div class="container mx-auto px-4 py-8 mb-12">
+      <!-- 홈 탭 콘텐츠 -->
+      <div id="content-home" class="tab-content max-w-2xl mx-auto text-center">
+        <!-- 로고 또는 큰 Q -->
+        <div class="text-9xl font-bold text-blue-600 mb-8">Q</div>
+
+        <h1 class="text-4xl font-bold text-gray-800 mb-6">
+          QuizWeek에 오신 것을 환영합니다!
+        </h1>
+
+        <p class="text-xl text-gray-600 mb-8">
+          크래프톤 정글에서 배운 지식을 테스트하고 다른 사용자들과 순위를
+          겨뤄보세요.
+        </p>
+
+        <!-- 시작하기 버튼 -->
+        <a
+          href="/quiz/start"
+          class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg text-xl shadow-lg transition duration-300"
+        >
+          시작하기
+        </a>
+      </div>
+
+      <!-- 순위 탭 콘텐츠 -->
+      <div id="content-ranking" class="tab-content max-w-4xl mx-auto hidden">
+        <h2 class="text-3xl font-bold text-center text-gray-800 mb-6">
+          크래프톤 랭킹
+        </h2>
+        {% if rank_position %}
+        <p class="text-center text-blue-600 font-semibold my-4">
+          당신의 현재 순위는 <strong>{{ rank_position }}등</strong> 입니다!
+        </p>
+        {% endif %}
+
+        <div class="bg-white shadow-md rounded-lg overflow-hidden">
+          <table class="min-w-full">
+            <thead>
+              <tr
+                class="bg-gray-100 text-gray-600 uppercase text-sm leading-normal"
+              >
+                <th class="py-3 px-6 text-left">순위</th>
+                <th class="py-3 px-6 text-left">닉네임</th>
+                <th class="py-3 px-6 text-center">정답 개수</th>
+              </tr>
+            </thead>
+            <tbody class="text-gray-600 text-sm">
+              {% for member in members %}
+              <tr class="border-b border-gray-200 hover:bg-gray-50">
+                <td class="py-3 px-6 text-left whitespace-nowrap">
+                  {{ loop.index }}
+                </td>
+                <td class="py-3 px-6 text-left">{{ member.nickname }}</td>
+                <td class="py-3 px-6 text-center">{{ member.score or 0 }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
-  </div>
 
-  <!-- 메인 컨텐츠 -->
-  <div class="container mx-auto px-4 py-8 mb-12">
-    <!-- 홈 탭 콘텐츠 -->
-    <div id="content-home" class="tab-content max-w-2xl mx-auto text-center">
-      <!-- 로고 또는 큰 Q -->
-      <div class="text-9xl font-bold text-blue-600 mb-8">Q</div>
-      
-      <h1 class="text-4xl font-bold text-gray-800 mb-6">QuizWeek에 오신 것을 환영합니다!</h1>
-      
-      <p class="text-xl text-gray-600 mb-8">
-        크래프톤 정글에서 배운 지식을 테스트하고 다른 사용자들과 순위를 겨뤄보세요.
-      </p>
-      
-      <!-- 시작하기 버튼 -->
-      <a href="/quiz/start" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg text-xl shadow-lg transition duration-300">
-        시작하기
-      </a>
-    </div>
-    
-    <!-- 순위 탭 콘텐츠 -->
-    <div id="content-ranking" class="tab-content max-w-4xl mx-auto hidden">
-      <h2 class="text-3xl font-bold text-center text-gray-800 mb-6">크래프톤 랭킹</h2>
-      
-      <div class="bg-white shadow-md rounded-lg overflow-hidden">
-        <table class="min-w-full">
-          <thead>
-            <tr class="bg-gray-100 text-gray-600 uppercase text-sm leading-normal">
-              <th class="py-3 px-6 text-left">순위</th>
-              <th class="py-3 px-6 text-left">닉네임</th>
-              <th class="py-3 px-6 text-center">정답 개수</th>
-            </tr>
-          </thead>
-          <tbody class="text-gray-600 text-sm">
-            <tr class="border-b border-gray-200 hover:bg-gray-50">
-              <td class="py-3 px-6 text-left whitespace-nowrap">1</td>
-              <td class="py-3 px-6 text-left">고양이</td>
-              <td class="py-3 px-6 text-center">23</td>
-            </tr>
-            <tr class="border-b border-gray-200 hover:bg-gray-50">
-              <td class="py-3 px-6 text-left whitespace-nowrap">2</td>
-              <td class="py-3 px-6 text-left">강아지</td>
-              <td class="py-3 px-6 text-center">21</td>
-            </tr>
-            <tr class="border-b border-gray-200 hover:bg-gray-50">
-              <td class="py-3 px-6 text-left whitespace-nowrap">3</td>
-              <td class="py-3 px-6 text-left">다람쥐</td>
-              <td class="py-3 px-6 text-center">20</td>
-            </tr>
-  
-          </tbody>
-        </table>
+    <!-- 푸터 -->
+    <footer class="bg-gray-800 text-white py-2 fixed bottom-0 w-full">
+      <div class="container mx-auto px-4 text-center">
+        <p class="text-sm">&copy; QuizWeek. 크래프톤 정글 9기 4팀.</p>
       </div>
-    </div>
-  </div>
-
-  <!-- 푸터 -->
-  <footer class="bg-gray-800 text-white py-2 fixed bottom-0 w-full">
-    <div class="container mx-auto px-4 text-center">
-      <p class="text-sm">&copy; QuizWeek. 크래프톤 정글 9기 4팀.</p>
-    </div>
-  </footer>
-</body>
+    </footer>
+  </body>
 </html>
