@@ -1,5 +1,5 @@
 {
-  "name": "your-project-name",
+  "name": "quizweek",
   "version": "1.0.0",
   "description": "Flask + MongoDB + Tailwind CSS project",
   "scripts": {
