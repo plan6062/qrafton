@@ -75,7 +75,7 @@
         <div class="space-x-4 flex items-center">
           {% if nickname %}
             <span class="text-blue-200 mr-2">{{ nickname }}님 환영합니다</span>
-            <a href="/" class="bg-red-500 hover:bg-red-600 px-3 py-1 rounded text-sm">로그아웃</a>
+            <a href="/logout" class="bg-red-500 hover:bg-red-600 px-3 py-1 rounded text-sm">로그아웃</a>
           {% else %}
             <a href="/register" class="hover:text-blue-200 font-medium">회원가입</a>
             <a href="/" class="bg-green-500 hover:bg-green-600 px-3 py-1 rounded text-sm">로그인</a>
@@ -103,7 +103,7 @@
   </div>
 
   <!-- 메인 컨텐츠 -->
-  <div class="container mx-auto px-4 py-8 mb-20">
+  <div class="container mx-auto px-4 py-8 mb-12">
     <!-- 홈 탭 콘텐츠 -->
     <div id="content-home" class="tab-content max-w-2xl mx-auto text-center">
       <!-- 로고 또는 큰 Q -->
@@ -158,9 +158,9 @@
   </div>
 
   <!-- 푸터 -->
-  <footer class="bg-gray-800 text-white py-6 fixed bottom-0 w-full">
+  <footer class="bg-gray-800 text-white py-2 fixed bottom-0 w-full">
     <div class="container mx-auto px-4 text-center">
-      <p>&copy; QuizWeek. 크래프톤 정글 9기 4팀.</p>
+      <p class="text-sm">&copy; QuizWeek. 크래프톤 정글 9기 4팀.</p>
     </div>
   </footer>
 </body>
