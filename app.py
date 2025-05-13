@@ -2,7 +2,8 @@ import jwt
 import datetime
 from flask import Flask, render_template, jsonify, request,redirect,make_response
 from pymongo import MongoClient
-  
+import random
+
 SECRET_KEY="your_secret_key"
   
   
@@ -96,7 +97,8 @@ def main():
 #퀴즈 시작 부분
 @app.route('/quiz/start')
 def start():
-    quiz=list(db.quiz_list.find())  # quiz 컬렉션
+    quiz_list=list(db.quiz_list.find())  # quiz 컬렉션
+    quiz = random.choice(quiz_list)  # 랜덤으로 문제 하나 선택
     
     return render_template("quiz.html",quiz=quiz)
 
