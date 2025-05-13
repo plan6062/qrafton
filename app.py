@@ -60,7 +60,9 @@ def register():
     db.member.insert_one({'userid':userid,'userpw':userpw,'nickname':nickname})
     return render_template('register.html',success=True)
 
-# 로그인 후 메인 페이지
+# 로그인 후 메인 페이지 - main.html과 연결
+# 오류시 첫 로그인 페이지로 연결 
+# JWT인증 방식으로 로그인 구현 
 @app.route('/main')
 def main():
     token = request.cookies.get('mytoken')
@@ -75,6 +77,10 @@ def main():
         return redirect('/')
 
     return redirect('/')
+
+
+
+
 
 if __name__=='__main__':
     app.run(debug=True)
