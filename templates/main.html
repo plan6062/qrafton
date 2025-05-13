@@ -22,12 +22,19 @@
       // 탭 전환 기능 구현
       const tabButtons = document.querySelectorAll('.tab-button');
       const tabContents = document.querySelectorAll('.tab-content');
+      const tabIndicators = document.querySelectorAll('.tab-indicator');
       
       function switchTab(tabId) {
         // 모든 탭 비활성화
         tabButtons.forEach(button => {
-          button.classList.remove('border-blue-600', 'text-gray-800');
-          button.classList.add('border-transparent', 'text-gray-600');
+          button.classList.remove('text-gray-800');
+          button.classList.add('text-gray-600');
+        });
+        
+        // 모든 탭 인디케이터 비활성화
+        tabIndicators.forEach(indicator => {
+          indicator.classList.remove('bg-blue-600');
+          indicator.classList.add('bg-transparent');
         });
         
         // 모든 컨텐츠 숨기기
@@ -36,8 +43,12 @@
         });
         
         // 선택한 탭 활성화
-        document.getElementById('tab-' + tabId).classList.remove('border-transparent', 'text-gray-600');
-        document.getElementById('tab-' + tabId).classList.add('border-blue-600', 'text-gray-800');
+        document.getElementById('tab-' + tabId).classList.remove('text-gray-600');
+        document.getElementById('tab-' + tabId).classList.add('text-gray-800');
+        
+        // 선택한 탭의 인디케이터 활성화
+        document.getElementById('tab-' + tabId).querySelector('.tab-indicator').classList.remove('bg-transparent');
+        document.getElementById('tab-' + tabId).querySelector('.tab-indicator').classList.add('bg-blue-600');
         
         // 선택한 컨텐츠 표시
         document.getElementById('content-' + tabId).classList.remove('hidden');
@@ -76,17 +87,23 @@
   
   <!-- 탭 메뉴 -->
   <div class="bg-gray-200 shadow-md">
-    <div class="container mx-auto">
+    <div class="container mx-auto px-0">
       <div class="flex justify-center relative">
         <div class="absolute h-full border-r border-gray-400" style="left: 50%;"></div>
-        <button id="tab-home" class="w-1/2 py-3 font-medium text-gray-800 focus:outline-none border-b-2 border-blue-600 tab-button text-center">문제 풀이</button>
-        <button id="tab-ranking" class="w-1/2 py-3 font-medium text-gray-600 focus:outline-none border-b-2 border-transparent tab-button text-center">순위</button>
+        <button id="tab-home" class="w-1/2 py-3 font-medium text-gray-800 focus:outline-none tab-button text-center relative">
+          문제 풀이
+          <div class="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600 tab-indicator"></div>
+        </button>
+        <button id="tab-ranking" class="w-1/2 py-3 font-medium text-gray-600 focus:outline-none tab-button text-center relative">
+          순위
+          <div class="absolute bottom-0 left-0 w-full h-0.5 bg-transparent tab-indicator"></div>
+        </button>
       </div>
     </div>
   </div>
 
   <!-- 메인 컨텐츠 -->
-  <div class="container mx-auto px-4 py-8">
+  <div class="container mx-auto px-4 py-8 mb-20">
     <!-- 홈 탭 콘텐츠 -->
     <div id="content-home" class="tab-content max-w-2xl mx-auto text-center">
       <!-- 로고 또는 큰 Q -->
@@ -141,7 +158,7 @@
   </div>
 
   <!-- 푸터 -->
-  <footer class="bg-gray-800 text-white py-6 mt-12">
+  <footer class="bg-gray-800 text-white py-6 fixed bottom-0 w-full">
     <div class="container mx-auto px-4 text-center">
       <p>&copy; QuizWeek. 크래프톤 정글 9기 4팀.</p>
     </div>
