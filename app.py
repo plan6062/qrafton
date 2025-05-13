@@ -9,8 +9,10 @@ SECRET_KEY = "your_secret_key"
   
   
 app = Flask(__name__)
-#client = MongoClient('mongodb://아이디:비번번@52.78.119.209', 27017)
 client = MongoClient('localhost', 27017)
+
+#EC2 연결시에는
+#client=MongoClient('mongodb://test:test@3.39.194.140',27017)
 
 db = client.quiz  # 'quiz' 라는 DB
 #컬렉션은 (member,question,answer,rank 등 예정 )
@@ -228,5 +230,5 @@ def logout():
     return response
 
 
-if __name__ == '__main__':
-    app.run(debug=True)
+if __name__=='__main__':
+    app.run(host='0.0.0.0', port=5000, debug=True)

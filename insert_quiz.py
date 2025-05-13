@@ -1,6 +1,9 @@
 # insert_quiz.py
 from pymongo import MongoClient
 
+
+#EC2 연결시에는
+#client=MongoClient('mongodb://test:test@3.39.194.140',27017)
 client = MongoClient('localhost', 27017)
 db = client.quiz
 
