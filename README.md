@@ -4,20 +4,24 @@
 ● 배포 URL : http://3.39.194.140:5000/
 
 # 프로젝트 소개
-● QUIZWEEK는 배운 내용을 퀴즈로 복습할 수 있는 웹 서비스입니다.
-● 틀린 문제에 대한 답을 바로 확인할 수 있습니다.
+● QUIZWEEK는 배운 내용을 퀴즈로 복습할 수 있는 웹 서비스입니다.  
+● 틀린 문제에 대한 답을 바로 확인할 수 있습니다.  
 ● 로그인/회원가입 기능을 통해 사용자간의 순위를 비교할 수 있습니다.
 
 # 1. 개발 환경
 ● Front-end : HTML, tailwindcss, Jinja  
-● Back-end : Flask, Jinja
-● Back-end : Flask, Jinja
-● 데이터베이스 : mongo DB
-● 협업 툴 : Github
+● Back-end : Flask, Jinja  
+● 데이터베이스 : mongo DB  
+● 협업 툴 : Github  
 ● 서비스 배포 환경 : AWS
 
 # 2. 기술적 챌린지
 
+# 3. 프로젝트 구조
+
+# 4. 신경 쓴 부분 
+
+# 5. 페이지별 기능
 # 1. 저장소 클론
 git clone [저장소URL]
 cd [프로젝트폴더]
