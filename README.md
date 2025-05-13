@@ -9,7 +9,8 @@
 ● 로그인/회원가입 기능을 통해 사용자간의 순위를 비교할 수 있습니다.
 
 # 1. 개발 환경
-● Front-end : HTML, tailwindcss, Jinja
+● Front-end : HTML, tailwindcss, Jinja  
+● Back-end : Flask, Jinja
 ● Back-end : Flask, Jinja
 ● 데이터베이스 : mongo DB
 ● 협업 툴 : Github
