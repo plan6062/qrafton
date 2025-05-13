@@ -13,6 +13,7 @@ client=MongoClient('localhost',27017)
 db = client.quiz  # 'quiz' 라는 DB
 #컬렉션은 (member,problem,answer,rank 등 예정 )
 
+# 첫 로그인 페이지 
 @app.route('/')
 def home():
     return render_template('index.html')
@@ -26,13 +27,11 @@ def login():
     userpw= request.form['userpw']
     user= db.member.find_one({'userid':userid,'userpw':userpw})
 
+    #로그인 성공시 메인페이지로 이동
     if user:
         payload={
             'id':userid,
             'exp':datetime.datetime.utcnow()+datetime.timedelta(hours=1)
-            
-            
-            
         }
         token = jwt.encode(payload,SECRET_KEY,algorithm='HS256')
         response=make_response(redirect('/main'))
@@ -59,7 +58,7 @@ def register():
     
     #DB에 삽입
     db.member.insert_one({'userid':userid,'userpw':userpw,'nickname':nickname})
-    return redirect('/')
+    return render_template('register.html',success=True)
 
 # 로그인 후 메인 페이지
 @app.route('/main')
