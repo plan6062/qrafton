@@ -22,3 +22,6 @@ npm run build-css
 
 # 7. 새 터미널에서 (가상환경 활성화 후)
 python app.py
+
+# 8. 주소 접속
+http://localhost:5000/
