@@ -30,3 +30,6 @@ python app.py
 
 # 8. 주소 접속
 http://localhost:5000/
+
+# 9. EC2 주소:
+http://3.39.194.140:5000/
