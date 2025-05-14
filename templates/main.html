@@ -182,15 +182,15 @@
             data.avg_score.toFixed(1);
           
           // Y축 레이블 업데이트
-          document.getElementById('max-score-label').textContent = data.max_score + '점';
-          document.getElementById('label-80').textContent = Math.round(data.max_score * 0.8) + '점';
-          document.getElementById('label-60').textContent = Math.round(data.max_score * 0.6) + '점';
-          document.getElementById('label-40').textContent = Math.round(data.max_score * 0.4) + '점';
-          document.getElementById('label-20').textContent = Math.round(data.max_score * 0.2) + '점';
+          document.getElementById('max-score-label').textContent = '5점';
+          document.getElementById('label-80').textContent = '4점';
+          document.getElementById('label-60').textContent = '3점';
+          document.getElementById('label-40').textContent = '2점';
+          document.getElementById('label-20').textContent = '1점';
           
           // 그래프 높이 비율 계산 (최대 점수 기준)
-          const userBarHeight = data.has_taken_quiz ? (data.user_score / data.max_score * 100) : 0;
-          const avgBarHeight = (data.avg_score / data.max_score * 100);
+          const userBarHeight = data.has_taken_quiz ? (data.user_score / 5 * 100) : 0;
+          const avgBarHeight = (data.avg_score / 5 * 100);
           
           // 그래프 높이 설정
           document.getElementById('user-bar').style.height = userBarHeight + '%';
@@ -254,15 +254,15 @@
           document.getElementById('avg-score-display').textContent = avgScore.toFixed(1);
           
           // Y축 레이블 업데이트
-          document.getElementById('max-score-label').textContent = maxScore + '점';
-          document.getElementById('label-80').textContent = Math.round(maxScore * 0.8) + '점';
-          document.getElementById('label-60').textContent = Math.round(maxScore * 0.6) + '점';
-          document.getElementById('label-40').textContent = Math.round(maxScore * 0.4) + '점';
-          document.getElementById('label-20').textContent = Math.round(maxScore * 0.2) + '점';
+          document.getElementById('max-score-label').textContent = '5점';
+          document.getElementById('label-80').textContent = '4점';
+          document.getElementById('label-60').textContent = '3점';
+          document.getElementById('label-40').textContent = '2점';
+          document.getElementById('label-20').textContent = '1점';
           
-          // 그래프 높이 비율 계산 (최대 점수 기준)
-          const userBarHeight = hasTakenQuiz ? (userScore / maxScore * 100) : 0;
-          const avgBarHeight = (avgScore / maxScore * 100);
+          // 그래프 높이 비율 계산 (5점 기준으로 고정)
+          const userBarHeight = data.has_taken_quiz ? (data.user_score / 5 * 100) : 0;
+          const avgBarHeight = (data.avg_score / 5 * 100);
           
           // 그래프 높이 설정 - 애니메이션 없이 즉시 적용
           document.getElementById('user-bar').style.height = userBarHeight + '%';
