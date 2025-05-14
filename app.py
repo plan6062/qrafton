@@ -172,37 +172,33 @@ def quiz_start():
         payload = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
         current_user_id = payload['id']
         user = db.member.find_one({'userid': current_user_id})
-
         if not user:
             return redirect('/')
 
-        # 이미 퀴즈를 완료했는지 확인
-        if user.get('quiz_completed', False):
-            return redirect('/quiz/finish')
-
-        # 진행 중인 시험이 있는지 확인
-        quiz_started = db.temp_quiz.find_one({'userid': current_user_id})
-        if quiz_started:
-            last_index = user.get('last_question_index', 0)
-            return redirect(f'/quiz/play/{last_index}')
-
-        # week 파라미터 가져오기
+        # 주차 정보 가져오기
         week = request.args.get('week', default=0, type=int)
+        quiz_completed_field = f'quiz_completed_w{week}'
 
-        # 사용자 문서에 현재 퀴즈 주차 저장
-        db.member.update_one(
-            {'userid': current_user_id},
-            {'$set': {'current_quiz_week': week}}
-        )
+        # ✅ 이미 해당 주차 퀴즈를 완료한 경우 -> 결과 페이지로 리다이렉트
+        if user.get(quiz_completed_field, False):
+            return redirect(f'/quiz/finish?week={week}')
 
-        # ✅ week와 상관없이 quiz_list에서 무작위 5문제 추출
-        all_quizzes = list(db.quiz_list.find())
-        selected_quizzes = random.sample(all_quizzes, 5)
+        # 기존 temp_quiz 제거 (같은 주차만)
+        db.temp_quiz.delete_many({'userid': current_user_id, 'week': week})
 
-        # temp_quiz에 저장
+        # 컬렉션 선택
+        collection_name = "quiz_list" if week == 0 else f"quiz_list_w{week}"
+        quiz_collection = db[collection_name]
+
+        # 퀴즈 선택
+        all_quizzes = list(quiz_collection.find())
+        selected_quizzes = random.sample(all_quizzes, 5) if len(all_quizzes) >= 5 else all_quizzes
+
+        # 저장
         for quiz in selected_quizzes:
             db.temp_quiz.insert_one({
                 'userid': current_user_id,
+                'week': week,
                 'question_id': str(quiz['_id']),
                 'question': quiz['question'],
                 'answer': quiz['answer'],
@@ -210,9 +206,11 @@ def quiz_start():
                 'answered': False
             })
 
+        # 상태 저장
         db.member.update_one(
             {'userid': current_user_id},
             {'$set': {
+                'current_quiz_week': week,
                 'quiz_in_progress': True,
                 'quiz_start_time': datetime.datetime.now(),
                 'last_question_index': 0,
@@ -226,6 +224,9 @@ def quiz_start():
         return redirect('/')
     except jwt.exceptions.DecodeError:
         return redirect('/')
+
+
+
 
 @app.route('/quiz/resume')
 def quiz_resume():
@@ -270,32 +271,25 @@ def quiz_play(index):
         current_user_id = payload['id']
         user = db.member.find_one({'userid': current_user_id})
 
-        # 현재 인덱스를 저장
-        db.member.update_one(
-            {'userid': current_user_id},
-            {'$set': {'last_question_index': index}}
-        )
+        week = user.get('current_quiz_week', 0)
 
-        quizzes = list(db.temp_quiz.find({'userid': current_user_id}))
+        db.member.update_one({'userid': current_user_id}, {'$set': {'last_question_index': index}})
+
+        quizzes = list(db.temp_quiz.find({'userid': current_user_id, 'week': week}))  # ✅ week 포함
         if index >= len(quizzes):
-            return redirect('/quiz/finish')
+            return redirect(f'/quiz/finish?week={week}')
 
         quiz = quizzes[index]
-        
-        # 문제가 이미 답변되었는지 확인
         is_answered = quiz.get('answered', False)
-        
-        if 'options' in quiz and isinstance(quiz['answer'], int):
-            correct_text = quiz['options'][quiz['answer'] - 1]  # 0-based index
-        else:
-            correct_text = quiz['answer']
 
-        
-        
+        correct_text = quiz['answer']
+        if 'options' in quiz and isinstance(quiz['answer'], int):
+            correct_text = quiz['options'][quiz['answer'] - 1]
+
         return render_template(
             "quiz.html", 
             quiz=quiz, 
-            index=index, 
+            index=index,
             is_answered=is_answered,
             question_number=index + 1,
             total_questions=len(quizzes),
@@ -303,9 +297,9 @@ def quiz_play(index):
             quiz_in_progress=True,
             correct_answer=correct_text
         )
-
     except:
         return redirect('/')
+
 
 @app.route('/quiz/submit', methods=['POST'])
 def quiz_submit():
@@ -366,6 +360,13 @@ def quiz_answer():
         payload = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
         current_user_id = payload['id']
         
+        # temp_quiz에서 해당 문제 찾고 주차 정보 가져오기
+        quiz = db.temp_quiz.find_one({
+            'userid': current_user_id,
+            'question_id': data.get('question_id')
+        })
+        week = quiz.get('week', 0)
+        
         # 해당 문제를 답변 완료로 표시
         db.temp_quiz.update_one(
             {
@@ -375,31 +376,30 @@ def quiz_answer():
             {'$set': {'answered': True}}
         )
         
-        # 학습 모드라면 score 반영도, 기록도 하지 않음
+        # 학습 모드일 경우 기록하지 않음
         if data.get('mode') == 'learn':
             return jsonify({'status': 'success', 'message': 'learn mode - not recorded'})
       
         if data.get('is_correct'):
-            # 정답인 경우 점수 증가
             db.member.update_one(
                 {'userid': current_user_id},
                 {'$inc': {'score': 1}}
             )
         
-        # 답변 기록 저장
+        # 정답 기록에 주차 정보 포함
         db.answers.insert_one({
             'userid': current_user_id,
             'question_id': data.get('question_id'),
             'is_correct': data.get('is_correct'),
             'user_answer': data.get('user_answer', ''),
-            'timestamp': datetime.datetime.now()
+            'timestamp': datetime.datetime.now(),
+            'week': week  # ✅ 주차 정보 저장
         })
         
         return jsonify({'status': 'success'})
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)})
-    
-    return jsonify({'status': 'error'})
+
 
 # 틀린 문제 저장
 @app.route('/quiz/save_wrong', methods=['POST'])
@@ -432,113 +432,91 @@ def quiz_finish():
         payload = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
         current_user_id = payload['id']
         user = db.member.find_one({'userid': current_user_id})
+        if not user:
+            return redirect('/main')
 
-        if user:
-            # 시험을 본 적이 있는지 확인
-            quiz_exists = db.temp_quiz.find_one({'userid': current_user_id})
-            if not quiz_exists:
-                return redirect('/main')  # 시험을 본 적이 없으면 메인으로
-            
-            # 모든 문제에 답변했는지 확인
-            all_questions = list(db.temp_quiz.find({'userid': current_user_id}))
-            answered_count = sum(1 for q in all_questions if q.get('answered', False))
-            
-            # 완료 상태 표시 (모든 문제를 풀었는지와 상관없이)
-            db.member.update_one(
-                {'userid': current_user_id},
-                {'$set': {
-                    'quiz_completed': True,
-                    'quiz_in_progress': False
-                }}
-            )
-            
-            nickname = user['nickname']
-            
-            # 주차 정보 가져오기 (사용자 문서에서)
-            week = user.get('current_quiz_week', 0)  # 기본값 0
-            score_field = f'score_{week}'
-            
-            # 현재 세션에서 맞은 문제 수 계산
-            correct_answers = list(db.answers.find({
-                'userid': current_user_id, 
-                'is_correct': True
-            }))
-            
-            correct_cnt = len(correct_answers)
-            
-            # 주차별 점수 저장 - 기존 'score' 필드도 유지 (호환성)
-            update_data = {
-                'score': correct_cnt,  # 기존 필드 유지
-                score_field: correct_cnt  # 주차별 점수 필드
-            }
-            
-            db.member.update_one(
-                {'userid': current_user_id},
-                {'$set': update_data}
-            )
-            
-            # 주차별 랭킹 계산
-            # 이 주차의 퀴즈를 응시한 사용자 목록
-            quiz_takers = list(db.member.find({score_field: {'$exists': True}}))
-            
-            # 주차별 점수 기준 정렬
-            quiz_takers.sort(key=lambda x: x.get(score_field, 0), reverse=True)
-            
-            # 현재 유저 순위 계산 - 퀴즈 응시자 중에서만 계산
-            my_rank = next(
-                (i for i, m in enumerate(quiz_takers, start=1) if m['userid'] == current_user_id),
-                None
-            )
-            
-            # 틀린 문제 정보 가져오기
-            wrong_answers = list(db.answers.find({
+        week = request.args.get('week', default=user.get('current_quiz_week', 0), type=int)
+        score_field = f'score_{week}'
+        quiz_completed_field = f'quiz_completed_w{week}'
+
+        all_questions = list(db.temp_quiz.find({'userid': current_user_id, 'week': week}))
+        if not all_questions:
+            return redirect('/main')
+
+        answered_count = sum(1 for q in all_questions if q.get('answered', False))
+
+        db.member.update_one(
+            {'userid': current_user_id},
+            {'$set': {
+                quiz_completed_field: True,
+                'quiz_in_progress': False
+            }}
+        )
+
+        # ✅ week 기준으로 정답 개수 계산
+        correct_cnt = db.answers.count_documents({
+            'userid': current_user_id,
+            'is_correct': True,
+            'week': week
+        })
+
+        db.member.update_one(
+            {'userid': current_user_id},
+            {'$set': {
+                'score': correct_cnt,
+                score_field: correct_cnt
+            }}
+        )
+
+        quiz_takers = list(db.member.find({score_field: {'$exists': True}}))
+        quiz_takers.sort(key=lambda x: x.get(score_field, 0), reverse=True)
+        my_rank = next((i for i, m in enumerate(quiz_takers, start=1) if m['userid'] == current_user_id), None)
+
+        # ✅ week 기준으로 오답 필터링
+        wrong_answers = list(db.answers.find({
+            'userid': current_user_id,
+            'is_correct': False,
+            'week': week
+        }))
+        wrong_questions = []
+        for wrong in wrong_answers:
+            question = db.temp_quiz.find_one({
                 'userid': current_user_id,
-                'is_correct': False
-            }))
-            
-            # 틀린 문제 목록 작성
-            wrong_questions = []
-            for wrong in wrong_answers:
-                q_id = wrong.get('question_id')
-                question = db.temp_quiz.find_one({
-                    'userid': current_user_id,
-                    'question_id': q_id
+                'week': week,
+                'question_id': wrong.get('question_id')
+            })
+            if question:
+                wrong_questions.append({
+                    'question': question.get('question', ''),
+                    'answer': question.get('answer', ''),
+                    'userAnswer': wrong.get('user_answer', '')
                 })
-                if question:
-                    wrong_questions.append({
-                        'question': question.get('question', ''),
-                        'answer': question.get('answer', ''),
-                        'userAnswer': wrong.get('user_answer', '')
-                    })
 
-            # 사용자 문서에 틀린 문제 저장
-            db.member.update_one(
-                {'userid': current_user_id},
-                {'$set': {'wrong_questions': wrong_questions}}
-            )
-            
-            # 미완료 문제 수 계산
-            incomplete_count = len(all_questions) - answered_count
-            incomplete_warning = None
-            if incomplete_count > 0:
-                incomplete_warning = f"{incomplete_count}개 문제를 풀지 않았습니다. 풀지 않은 문제는 오답으로 처리됩니다."
-            
-            return render_template(
-                "quiz_finish.html",
-                nickname=nickname,
-                correct_cnt=correct_cnt,
-                total_cnt=len(all_questions),
-                my_rank=my_rank,
-                wrong_questions=wrong_questions,
-                incomplete_warning=incomplete_warning,
-                week=f"Week {week}"  # 주차 정보 추가
-            )
+        db.member.update_one(
+            {'userid': current_user_id},
+            {'$set': {'wrong_questions': wrong_questions}}
+        )
+
+        incomplete_count = len(all_questions) - answered_count
+        incomplete_warning = f"{incomplete_count}개 문제를 풀지 않았습니다. 풀지 않은 문제는 오답으로 처리됩니다." if incomplete_count > 0 else None
+
+        return render_template(
+            "quiz_finish.html",
+            nickname=user['nickname'],
+            correct_cnt=correct_cnt,
+            total_cnt=len(all_questions),
+            my_rank=my_rank,
+            wrong_questions=wrong_questions,
+            incomplete_warning=incomplete_warning,
+            week=f"Week {week}"
+        )
+
     except jwt.ExpiredSignatureError:
         return redirect('/main')
     except jwt.exceptions.DecodeError:
         return redirect('/main')
 
-    return redirect('/main')
+
 
 @app.route('/get_rankings/<int:week>')
 def get_rankings(week):
