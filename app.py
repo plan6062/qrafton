@@ -194,6 +194,7 @@ def quiz_start():
         return redirect('/')
     except jwt.exceptions.DecodeError:
         return redirect('/')
+    
 @app.route('/quiz/play/<int:index>')
 def quiz_play(index):
     token = request.cookies.get('mytoken')
