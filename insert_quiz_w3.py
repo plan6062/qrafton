@@ -1,6 +1,6 @@
 # insert_quiz.py
 from pymongo import MongoClient
-#1주차 db -> quiz_list_w1 컬렉션션
+#3주차 db -> quiz_list_w3 컬렉션
 
 #EC2 연결시에는
 #client=MongoClient('mongodb://test:test@3.39.194.140',27017)
