@@ -498,7 +498,7 @@ def quiz_finish():
         )
 
         incomplete_count = len(all_questions) - answered_count
-        incomplete_warning = f"{incomplete_count}개 문제를 풀지 않았습니다. 풀지 않은 문제는 오답으로 처리됩니다." if incomplete_count > 0 else None
+        # incomplete_warning = f"{incomplete_count}개 문제를 풀지 않았습니다. 풀지 않은 문제는 오답으로 처리됩니다." if incomplete_count > 0 else None
 
         return render_template(
             "quiz_finish.html",
@@ -507,7 +507,7 @@ def quiz_finish():
             total_cnt=len(all_questions),
             my_rank=my_rank,
             wrong_questions=wrong_questions,
-            incomplete_warning=incomplete_warning,
+            # incomplete_warning=incomplete_warning,
             week=f"Week {week}"
         )
 
