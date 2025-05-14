@@ -262,13 +262,19 @@ def quiz_finish():
             nickname = user['nickname']
             correct_cnt = user.get('score', 0)  # 맞은 개수는 score 필드에서
 
-            # 모든 유저 점수 기준 정렬
+            # 퀴즈를 응시한 사용자의 ID 목록 가져오기
+            quiz_taken_users = set(answer['userid'] for answer in db.answers.find({}, {'userid': 1}))
+            
+            # 모든 유저 목록에서 퀴즈 응시자만 필터링
             members = list(db.member.find())
-            members.sort(key=lambda x: x.get('score', 0), reverse=True)
+            quiz_takers = [member for member in members if member['userid'] in quiz_taken_users]
+            
+            # 점수 기준 정렬
+            quiz_takers.sort(key=lambda x: x.get('score', 0), reverse=True)
 
-            # 현재 유저 순위 계산
+            # 현재 유저 순위 계산 - 퀴즈 응시자 중에서만 계산
             my_rank = next(
-                (i for i, m in enumerate(members, start=1) if m['userid'] == current_user_id),
+                (i for i, m in enumerate(quiz_takers, start=1) if m['userid'] == current_user_id),
                 None
             )
             
