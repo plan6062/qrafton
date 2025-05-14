@@ -185,18 +185,18 @@
 
     <!-- 퀴즈 컨텐츠 -->
     <div class="container mx-auto px-4 py-8 mb-12">
-      <div class="max-w-2xl mx-auto bg-white rounded-lg shadow-lg p-6">
+      <div class="max-w-2xl mx-auto bg-black rounded-lg shadow-lg p-6">
         <!-- 퀴즈 아이콘 및 카운트 -->
         <div class="flex justify-between items-center mb-4">
           <div class="text-6xl font-bold text-primary">Q</div>
-          <div class="text-xl font-bold text-text-dark">문제 <span id="question-count">1</span>/5</div>
+          <div class="text-xl font-bold text-primary">문제 <span id="question-count">1</span>/5</div>
         </div>
         
-        <h1 class="text-2xl font-bold text-text-dark mb-6 text-center">퀴즈 문제</h1>
+        <h1 class="text-2xl font-bold text-primary mb-6 text-center">시험 모드</h1>
         
         <!-- 질문 -->
-        <div class="bg-gray-50 p-6 rounded-lg mb-6">
-          <p class="text-xl text-text-dark">{{ quiz.question }}</p>
+        <div class="bg-black p-6 rounded-lg mb-6 border-2 border-primary">
+          <p class="text-xl text-primary">{{ quiz.question }}</p>
         </div>
         
         <!-- 답변 폼 -->
@@ -205,11 +205,11 @@
           <input type="hidden" id="correct-answer" value="{{ quiz.answer }}">
           
           <div class="mb-6">
-            <label for="user-answer" class="block text-text-dark mb-2">답변:</label>
+            <label for="user-answer" class="block text-primary mb-2">답변:</label>
             <input
               type="text"
               id="user-answer"
-              class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              class="w-full px-3 py-2 bg-black text-primary border border-primary rounded focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
               required
               autocomplete="off"
               autofocus
@@ -223,7 +223,7 @@
             <button
               type="submit"
               id="submit-button"
-              class="bg-black hover:bg-gray-800 text-primary font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+              class="bg-black hover:bg-gray-800 text-primary font-bold py-2 px-4 rounded border-2 border-primary focus:outline-none focus:shadow-outline"
             >
               정답 제출
             </button>
