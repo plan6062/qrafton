@@ -113,9 +113,10 @@
           const userScore = parseInt("{{ user_score | default(0) }}");
           const avgScore = parseFloat("{{ avg_score | default(0) }}");
           const maxScore = parseInt("{{ max_score | default(10) }}");
-          
+          const hasTakenQuiz = ("{{ 'true' if has_taken_quiz else 'false' }}");
+
           // 점수 표시 업데이트
-          document.getElementById('user-score-display').textContent = userScore;
+          document.getElementById('user-score-display').textContent = hasTakenQuiz ? userScore : '-';
           document.getElementById('avg-score-display').textContent = avgScore.toFixed(1);
           
           // Y축 레이블 업데이트
@@ -126,7 +127,7 @@
           document.getElementById('label-20').textContent = Math.round(maxScore * 0.2) + '점';
           
           // 그래프 높이 비율 계산 (최대 점수 기준)
-          const userBarHeight = (userScore / maxScore * 100);
+          const userBarHeight = hasTakenQuiz ? (userScore / maxScore * 100) : 0;
           const avgBarHeight = (avgScore / maxScore * 100);
           
           // 그래프 높이 설정 - 애니메이션 없이 즉시 적용
@@ -269,17 +270,21 @@
           
           <!-- 점수 정보 -->
           <div class="bg-gray-50 p-4 rounded-lg mb-4 text-center max-w-md mx-auto">
-            {% if rank_position %}
-            <p class="text-lg">
-              <span class="font-bold text-primary">{{ rank_position }}등</span>을 기록했습니다!
-            </p>
-            <p class="text-sm text-gray-600 mt-1">
-              전체 {{ members|length }}명 중에서 {{ rank_position }}등입니다
-            </p>
+            {% if not has_taken_quiz %}
+              <p class="text-lg text-gray-600">
+                아직 시험을 응시하지 않았습니다
+              </p>
+            {% elif rank_position %}
+              <p class="text-lg">
+                <span class="font-bold text-primary">{{ rank_position }}등</span>을 기록했습니다!
+              </p>
+              <p class="text-sm text-gray-600 mt-1">
+                전체 {{ members|length }}명 중에서 {{ rank_position }}등입니다
+              </p>
             {% else %}
-            <p class="text-lg text-gray-600">
-              로그인하시면 순위 정보를 확인할 수 있습니다
-            </p>
+              <p class="text-lg text-gray-600">
+                로그인하시면 순위 정보를 확인할 수 있습니다
+              </p>
             {% endif %}
           </div>
         </div>

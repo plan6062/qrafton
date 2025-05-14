@@ -117,6 +117,10 @@ def main():
         if user:
             # 수정된 부분: 사용자 정보와 함께 통계 데이터도 가져오기
             members, rank_position, user_score, avg_score, max_score = get_user_rank(current_user_id)
+
+            # 사용자가 퀴즈를 풀었는지 확인 (answers 컬렉션에서 해당 사용자의 답변 기록 확인)
+            has_taken_quiz = db.answers.find_one({'userid': current_user_id}) is not None
+
             return render_template(
                 'main.html',
                 nickname=user['nickname'],
@@ -125,7 +129,8 @@ def main():
                 user_id=current_user_id,
                 user_score=user_score,
                 avg_score=avg_score,
-                max_score=max_score
+                max_score=max_score,
+                has_taken_quiz=has_taken_quiz
             )
     except jwt.ExpiredSignatureError:
         return redirect('/')
