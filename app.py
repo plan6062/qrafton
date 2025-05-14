@@ -205,6 +205,7 @@ def quiz_start():
                 'question_id': str(quiz['_id']),
                 'question': quiz['question'],
                 'answer': quiz['answer'],
+                'options': quiz.get('options'),
                 'answered': False
             })
         
@@ -285,6 +286,13 @@ def quiz_play(index):
         # 문제가 이미 답변되었는지 확인
         is_answered = quiz.get('answered', False)
         
+        if 'options' in quiz and isinstance(quiz['answer'], int):
+            correct_text = quiz['options'][quiz['answer'] - 1]  # 0-based index
+        else:
+            correct_text = quiz['answer']
+
+        
+        
         return render_template(
             "quiz.html", 
             quiz=quiz, 
@@ -293,7 +301,8 @@ def quiz_play(index):
             question_number=index + 1,
             total_questions=len(quizzes),
             nickname=user['nickname'],
-            quiz_in_progress=True
+            quiz_in_progress=True,
+            correct_answer=correct_text
         )
 
     except:
