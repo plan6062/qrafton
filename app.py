@@ -488,6 +488,8 @@ def quiz_finish():
                 'is_correct': False
             }))
             
+            # wrong_questions = []
+            # 기존 wrong_questions 부분을 수정
             wrong_questions = []
             for wrong in wrong_answers:
                 q_id = wrong.get('question_id')
@@ -499,8 +501,14 @@ def quiz_finish():
                     wrong_questions.append({
                         'question': question.get('question', ''),
                         'answer': question.get('answer', ''),
-                        'user_answer': wrong.get('user_answer', '')
+                        'userAnswer': wrong.get('user_answer', '')  # 수정: user_answer -> userAnswer
                     })
+
+            # 사용자 문서에 틀린 문제 저장
+            db.member.update_one(
+                {'userid': current_user_id},
+                {'$set': {'wrong_questions': wrong_questions}}
+            )
             
             # 미완료 문제 수 계산
             incomplete_count = len(all_questions) - answered_count

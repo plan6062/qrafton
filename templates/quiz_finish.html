@@ -37,38 +37,8 @@
     
     <script>
       document.addEventListener("DOMContentLoaded", function() {
-        // 세션 스토리지에서 틀린 문제 정보 가져오기
-        const wrongQuestions = JSON.parse(sessionStorage.getItem('wrongQuestions') || '[]');
-        const wrongQuestionsContainer = document.getElementById('wrong-questions');
-        
-        // 틀린 문제가 있으면 표시
-        if (wrongQuestions.length > 0) {
-          document.getElementById('no-wrong-questions').classList.add('hidden');
-          
-          // 각 틀린 문제에 대한 정보 표시
-          wrongQuestions.forEach((item, index) => {
-            const questionDiv = document.createElement('div');
-            questionDiv.className = 'bg-gray-50 p-4 rounded-lg mb-4';
-            questionDiv.innerHTML = `
-              <div class="font-bold text-lg mb-2">문제 ${index + 1}</div>
-              <p class="mb-3">${item.question}</p>
-              <div class="flex flex-col gap-2">
-                <div class="flex items-center">
-                  <span class="font-bold text-red-500 mr-2">✘</span>
-                  <span>내 답변: ${item.userAnswer}</span>
-                </div>
-                <div class="flex items-center">
-                  <span class="font-bold text-green-500 mr-2">✓</span>
-                  <span>정답: ${item.answer}</span>
-                </div>
-              </div>
-            `;
-            wrongQuestionsContainer.appendChild(questionDiv);
-          });
-        }
-        
-        // 퀴즈 다시 시작할 때 세션 스토리지 초기화
-        document.getElementById('restart-button').addEventListener('click', function() {
+        // 세션 스토리지에서 불필요한 데이터 정리
+        document.getElementById('restart-button')?.addEventListener('click', function() {
           sessionStorage.removeItem('quizCount');
           sessionStorage.removeItem('wrongQuestions');
         });
@@ -130,7 +100,7 @@
               <div class="p-4">
                 <div class="text-text-dark font-bold mb-2">맞은 개수</div>
                 <div class="text-3xl font-bold text-primary">{{ correct_cnt }}</div>
-                <div class="text-gray-500">/ 5문제</div>
+                <div class="text-gray-500">/ {{ total_cnt }}문제</div>
               </div>
               <div class="p-4">
                 <div class="text-text-dark font-bold mb-2">순위</div>
@@ -146,14 +116,41 @@
           <h2 class="text-xl font-bold text-text-dark mb-4">틀린 문제 해설</h2>
           
           <!-- 틀린 문제가 없을 경우 -->
-          <div id="no-wrong-questions" class="bg-green-50 p-4 rounded-lg mb-4">
+          {% if wrong_questions|length == 0 %}
+          <div class="bg-green-50 p-4 rounded-lg mb-4">
             <p class="text-center text-green-700">
               모든 문제를 맞히셨습니다! 축하합니다! 🎉
             </p>
           </div>
-          
+          {% else %}
           <!-- 틀린 문제 목록 -->
-          <div id="wrong-questions"></div>
+          <div id="wrong-questions">
+            {% for item in wrong_questions %}
+            <div class="bg-gray-50 p-4 rounded-lg mb-4">
+              <div class="font-bold text-lg mb-2">문제 {{ loop.index }}</div>
+              <p class="mb-3">{{ item.question }}</p>
+              <div class="flex flex-col gap-2">
+                <div class="flex items-center">
+                  <span class="font-bold text-red-500 mr-2">✘</span>
+                  <span>내 답변: {{ item.userAnswer }}</span>
+                </div>
+                <div class="flex items-center">
+                  <span class="font-bold text-green-500 mr-2">✓</span>
+                  <span>정답: {{ item.answer }}</span>
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          {% endif %}
+          
+          {% if incomplete_warning %}
+          <div class="bg-yellow-50 p-4 rounded-lg mb-4">
+            <p class="text-center text-yellow-700">
+              {{ incomplete_warning }}
+            </p>
+          </div>
+          {% endif %}
         </div>
         
         <!-- 버튼 -->

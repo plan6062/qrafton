@@ -54,31 +54,30 @@
           e.preventDefault();
 
           const radioAnswer = document.querySelector("input[name='user-option']:checked");
-const userAnswer = radioAnswer ? radioAnswer.value : document.getElementById("user-answer").value.trim();
-const correctAnswerRaw = document.getElementById("correct-answer").value.trim();
-const questionId = document.getElementById("question-id").value;
-const resultDiv = document.getElementById("result");
-const nextButton = document.getElementById("next-button");
+          const userAnswer = radioAnswer ? radioAnswer.value : document.getElementById("user-answer").value.trim();
+          const correctAnswerRaw = document.getElementById("correct-answer").value.trim();
+          const questionId = document.getElementById("question-id").value;
+          const resultDiv = document.getElementById("result");
+          const nextButton = document.getElementById("next-button");
 
-let isCorrect = false;
-let correctText = correctAnswerRaw;
+          let isCorrect = false;
+          let correctText = correctAnswerRaw;
 
-if (radioAnswer) {
-  const correctAnswer = parseInt(correctAnswerRaw);
-  const userAnswerInt = parseInt(userAnswer);
+          if (radioAnswer) {
+            const correctAnswer = parseInt(correctAnswerRaw);
+            const userAnswerInt = parseInt(userAnswer);
 
-  // options에서 정답 텍스트 가져오기
-  const options = document.querySelectorAll("input[name='user-option']");
-  const selectedOption = options[correctAnswer - 1];
-  if (selectedOption) {
-    correctText = selectedOption.parentElement.textContent.trim();
-  }
+            // options에서 정답 텍스트 가져오기
+            const options = document.querySelectorAll("input[name='user-option']");
+            const selectedOption = options[correctAnswer - 1];
+            if (selectedOption) {
+              correctText = selectedOption.parentElement.textContent.trim();
+            }
 
-  isCorrect = userAnswerInt === correctAnswer;
-} else {
-  isCorrect = userAnswer.toLowerCase() === correctAnswerRaw.toLowerCase();
-}
-
+            isCorrect = userAnswerInt === correctAnswer;
+          } else {
+            isCorrect = userAnswer.toLowerCase() === correctAnswerRaw.toLowerCase();
+          }
 
           if (isCorrect) {
             resultDiv.innerHTML = `<div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-4" role="alert">
@@ -90,6 +89,32 @@ if (radioAnswer) {
               <p class="font-bold">오답입니다!</p>
               <p>정확한 답변: ${correctText}</p>
             </div>`;
+            
+            // 틀린 문제 정보 저장
+            const wrongQuestion = {
+              question: document.querySelector(".question-text").textContent,
+              answer: correctText,
+              userAnswer: userAnswer
+            };
+            
+            // 세션 스토리지에 틀린 문제 정보 저장
+            const wrongQuestions = JSON.parse(sessionStorage.getItem('wrongQuestions') || '[]');
+            wrongQuestions.push(wrongQuestion);
+            sessionStorage.setItem('wrongQuestions', JSON.stringify(wrongQuestions));
+            
+            // 서버에도 틀린 문제 정보 저장
+            fetch('/quiz/save_wrong', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(wrongQuestions)
+            })
+            .then(response => response.json())
+            .then(data => {
+              console.log("틀린 문제 저장 결과:", data);
+            })
+            .catch(error => {
+              console.error("틀린 문제 저장 오류:", error);
+            });
           }
 
           fetch('/quiz/answer', {
@@ -148,7 +173,7 @@ if (radioAnswer) {
         </div>
 
         <form id="answer-form">
-          <input type="hidden" id="question-id" value="{{ quiz._id }}">
+          <input type="hidden" id="question-id" value="{{ quiz.question_id }}">
           <input type="hidden" id="correct-answer" value="{{ correct_answer }}">
 
           <div class="mb-6">
