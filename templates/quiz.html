@@ -36,22 +36,12 @@
     <title>QuizWeek - 퀴즈</title>
     
     <script>
-
-      // 현재 문제 인덱스
+      // 템플릿 변수를 JavaScript 변수로 변환
       const currentIndex = parseInt("{{ index }}");
+      const totalQuestions = parseInt("{{ total_questions }}");
+      const questionNumber = parseInt("{{ question_number }}");
 
       document.addEventListener("DOMContentLoaded", function() {
-        // 문제 카운트 초기화 (세션 스토리지 사용)
-        if (!sessionStorage.getItem('quizCount')) {
-          sessionStorage.setItem('quizCount', '1');
-          // 틀린 문제 배열 초기화
-          sessionStorage.setItem('wrongQuestions', JSON.stringify([]));
-        }
-        
-        // 현재 문제 번호 표시
-        const currentCount = parseInt(sessionStorage.getItem('quizCount'));
-        document.getElementById('question-count').textContent = currentCount;
-        
         // 로고 클릭 시 경고창 표시
         document.getElementById('logo-link').addEventListener('click', function(e) {
           e.preventDefault();
@@ -87,7 +77,8 @@
               },
               body: JSON.stringify({
                 question_id: questionId,
-                is_correct: true
+                is_correct: true,
+                user_answer: userAnswer
               }),
             });
           } else {
@@ -98,16 +89,6 @@
               </div>
             `;
             
-            // 오답일 경우 틀린 문제 저장
-            const wrongQuestions = JSON.parse(sessionStorage.getItem('wrongQuestions') || '[]');
-            wrongQuestions.push({
-              id: questionId,
-              question: questionText,
-              answer: correctAnswer,
-              userAnswer: userAnswer
-            });
-            sessionStorage.setItem('wrongQuestions', JSON.stringify(wrongQuestions));
-            
             // 오답 처리를 위한 AJAX 요청
             fetch('/quiz/answer', {
               method: 'POST',
@@ -116,7 +97,8 @@
               },
               body: JSON.stringify({
                 question_id: questionId,
-                is_correct: false
+                is_correct: false,
+                user_answer: userAnswer
               }),
             });
           }
@@ -124,38 +106,22 @@
           // 제출 버튼 숨기기
           document.getElementById("submit-button").classList.add("hidden");
           
-          // 문제 카운트 확인하여 다음 동작 결정
-          if (currentIndex + 1 >= 5) {
+          // 문제 카운트 확인하여 다음 동작 결정 - JavaScript 변수 사용
+          if (currentIndex + 1 >= totalQuestions) {
             nextButton.href = "/quiz/finish";
             nextButton.textContent = "결과 보기";
           } else {
             nextButton.href = `/quiz/play/${currentIndex + 1}`;
-            nextButton.textContent = `다음 문제`;
+            nextButton.textContent = `다음 문제 (${currentIndex + 2}/${totalQuestions})`;
           }
           
           // 다음 문제 버튼 표시
           nextButton.classList.remove("hidden");
-          
-          // 문제 카운트 증가
-          const newCount = currentCount + 1;
-          sessionStorage.setItem('quizCount', newCount.toString());
         });
         
         // 결과 페이지로 이동 시 틀린 문제 정보 전달
         document.getElementById("next-button").addEventListener("click", function(e) {
-          if (this.href.includes("/quiz/finish")) {
-            // 틀린 문제 정보를 서버에 저장
-            const wrongQuestions = sessionStorage.getItem('wrongQuestions');
-            if (wrongQuestions) {
-              fetch('/quiz/save_wrong', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: wrongQuestions
-              });
-            }
-          }
+          // 서버에서 자동으로 처리되므로 추가 작업 필요 없음
         });
       });
     </script>
@@ -196,7 +162,7 @@
         <!-- 퀴즈 아이콘 및 카운트 -->
         <div class="flex justify-between items-center mb-4">
           <div class="text-6xl font-bold text-primary">Q</div>
-          <div class="text-xl font-bold text-primary">문제 <span id="question-count">1</span>/5</div>
+          <div class="text-xl font-bold text-primary">문제 <span id="question-count">{{ question_number }}</span>/{{ total_questions }}</div>
         </div>
         
         <h1 class="text-2xl font-bold text-primary mb-6 text-center">시험 모드</h1>

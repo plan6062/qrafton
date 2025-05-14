@@ -208,7 +208,16 @@ def quiz_play(index):
             return redirect('/quiz/finish')
 
         quiz = quizzes[index]
-        return render_template("quiz.html", quiz=quiz, index=index, nickname=user['nickname'])
+        
+        # 문제 번호를 1부터 시작하도록 설정
+        question_number = index + 1
+        
+        return render_template("quiz.html", 
+                              quiz=quiz, 
+                              index=index, 
+                              question_number=question_number,  # 현재 문제 번호 전달
+                              total_questions=len(quizzes),     # 총 문제 수 전달
+                              nickname=user['nickname'])
 
     except:
         return redirect('/')
@@ -242,6 +251,8 @@ def quiz_submit():
     
     
 # 퀴즈 답변 제출 처리
+# app.py에 수정할 코드
+
 @app.route('/quiz/answer', methods=['POST'])
 def quiz_answer():
     data = request.json
@@ -253,11 +264,38 @@ def quiz_answer():
         user = db.member.find_one({'userid': current_user_id})
         
         if user:
-            
             # 학습 모드라면 score 반영도, 기록도 하지 않음
             if data.get('mode') == 'learn':
                 return jsonify({'status': 'success', 'message': 'learn mode - not recorded'})
           
+            # 답변 기록 저장
+            answer_record = {
+                'userid': current_user_id,
+                'question_id': data.get('question_id'),
+                'is_correct': data.get('is_correct'),
+                'timestamp': datetime.datetime.now()
+            }
+            
+            # 사용자의 답변도 저장
+            if data.get('user_answer'):
+                answer_record['user_answer'] = data.get('user_answer')
+            
+            # 틀린 문제인 경우, 틀린 문제 목록에 추가
+            if not data.get('is_correct'):
+                question = db.quiz_list.find_one({'_id': data.get('question_id')})
+                if question:
+                    wrong_question = {
+                        'id': str(question['_id']),
+                        'question': question['question'],
+                        'answer': question['answer'],
+                        'user_answer': data.get('user_answer', '')
+                    }
+                    # 틀린 문제 목록에 추가 (중복 방지)
+                    db.member.update_one(
+                        {'userid': current_user_id},
+                        {'$addToSet': {'wrong_questions': wrong_question}}
+                    )
+            
             if data.get('is_correct'):
                 # 정답인 경우 점수 증가
                 db.member.update_one(
@@ -266,12 +304,7 @@ def quiz_answer():
                 )
             
             # 답변 기록 저장
-            db.answers.insert_one({
-                'userid': current_user_id,
-                'question_id': data.get('question_id'),
-                'is_correct': data.get('is_correct'),
-                'timestamp': datetime.datetime.now()
-            })
+            db.answers.insert_one(answer_record)
             
             return jsonify({'status': 'success'})
     except Exception as e:
