@@ -425,6 +425,7 @@ def save_wrong():
     return jsonify({'status': 'error'})
 
 # 퀴즈 완료 부분
+# 퀴즈 완료 부분
 @app.route('/quiz/finish')
 def quiz_finish():
     token = request.cookies.get('mytoken')
@@ -458,30 +459,31 @@ def quiz_finish():
                 'is_correct': True
             })
             
-            # 퀴즈를 응시한 사용자의 ID 목록 가져오기
-            quiz_taken_users = set(answer['userid'] for answer in db.answers.find({}, {'userid': 1}))
-            
-            # 모든 유저 목록에서 퀴즈 응시자만 필터링
-            members = list(db.member.find())
-            quiz_takers = [member for member in members if member['userid'] in quiz_taken_users]
-            
             # 주차 정보 가져오기 (사용자 문서에서)
             week = user.get('current_quiz_week', 0)  # 기본값 0
             score_field = f'score_{week}'
             
-            # 점수 계산 및 순위 업데이트
+            # 점수 계산
             user_score = correct_cnt
+            
+            # 주차별 점수 저장 - 기존 'score' 필드도 유지 (호환성)
+            update_data = {
+                'score': user_score,  # 기존 필드 유지
+                score_field: user_score  # 주차별 점수 필드
+            }
+            
             db.member.update_one(
                 {'userid': current_user_id},
-                {'$set': {
-                    'score': user_score,  # 기존 필드 유지 (호환성)
-                    score_field: user_score  # 주차별 점수 필드
-                }}
+                {'$set': update_data}
             )
             
-            # 점수 기준 정렬
-            quiz_takers.sort(key=lambda x: x.get('score', 0), reverse=True)
-
+            # 주차별 랭킹 계산
+            # 이 주차의 퀴즈를 응시한 사용자 목록
+            quiz_takers = list(db.member.find({score_field: {'$exists': True}}))
+            
+            # 주차별 점수 기준 정렬
+            quiz_takers.sort(key=lambda x: x.get(score_field, 0), reverse=True)
+            
             # 현재 유저 순위 계산 - 퀴즈 응시자 중에서만 계산
             my_rank = next(
                 (i for i, m in enumerate(quiz_takers, start=1) if m['userid'] == current_user_id),
@@ -528,7 +530,8 @@ def quiz_finish():
                 total_cnt=len(all_questions),
                 my_rank=my_rank,
                 wrong_questions=wrong_questions,
-                incomplete_warning=incomplete_warning
+                incomplete_warning=incomplete_warning,
+                week=f"Week {week}"  # 주차 정보 추가
             )
     except jwt.ExpiredSignatureError:
         return redirect('/main')
