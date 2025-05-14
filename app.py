@@ -7,7 +7,7 @@ import json
 import secrets
 
 SECRET_KEY = secrets.token_hex(32)
-  
+#브랜치테스트  
   
 app = Flask(__name__)
 client = MongoClient('localhost', 27017)
