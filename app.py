@@ -294,6 +294,44 @@ def logout():
     response.delete_cookie('mytoken')
     return response
 
+# 학습 모드 추가
+# app.py에 학습 모드 추가 구현
+
+@app.route('/quiz/learn')
+def quiz_learn():
+    token = request.cookies.get('mytoken')
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
+        current_user_id = payload['id']
+        user = db.member.find_one({'userid': current_user_id})
+
+        if not user:
+            return redirect('/')
+
+        # 학습 모드에서도 이미 푼 문제 포함해서 랜덤으로 5문제 제공
+        all_quizzes = list(db.quiz_list.find())
+        if not all_quizzes:
+            return "퀴즈가 존재하지 않습니다."
+
+        # 랜덤 퀴즈 1개 선택
+        quiz = random.choice(all_quizzes)
+
+        return render_template("quiz.html", quiz=quiz, nickname=user['nickname'], is_learn=True)
+
+    except jwt.ExpiredSignatureError:
+        return redirect('/')
+    except jwt.exceptions.DecodeError:
+        return redirect('/')
+
+
+# quiz.html 템플릿에 is_learn 값을 전달받아 판단해서 /quiz/answer 요청 생략하거나 처리 안 함
+
+# quiz.html 내부에서 다음을 조건 추가 (JS 및 HTML)
+# 1. is_learn이 true이면 /quiz/answer로 fetch() 요청하지 않음
+# 2. 결과 보기(next-button.href)가 /quiz/learn 으로 돌아가게 설정 (ex. /quiz/learn_finish 없이)
+# 3. sessionStorage 점수 관련 데이터 초기화해서 순위 반영되지 않도록 유지
+
+
 
 if __name__=='__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
