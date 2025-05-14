@@ -108,10 +108,12 @@
             .getElementById("content-" + tabId)
             .classList.remove("hidden");
             
-          // 순위 탭이 선택되었을 때 그래프 초기화
-          if(tabId === "ranking") {
-            initScoreGraph();
-          }
+          // 순위 탭이 선택되었을 때
+            if(tabId === "ranking") {
+              // 주차 선택 메시지 표시, 랭킹 숨기기
+              document.getElementById('select-week-message').classList.remove('hidden');
+              document.getElementById('rankings-container').classList.add('hidden');
+            }
         }
 
         // 탭 클릭 이벤트 리스너 등록
@@ -129,6 +131,115 @@
 
         // 초기 탭 설정 (홈)
         switchTab("home");
+
+        // 주차 버튼 기능
+        const weekButtons = document.querySelectorAll(".week-button");
+        const rankingsContainer = document.getElementById("rankings-container");
+        const selectWeekMessage = document.getElementById("select-week-message");
+
+        weekButtons.forEach(button => {
+          button.addEventListener("click", function() {
+            // 버튼 스타일 업데이트
+            weekButtons.forEach(btn => {
+              btn.classList.remove("bg-primary");
+              btn.classList.add("bg-gray-300");
+            });
+            this.classList.remove("bg-gray-300");
+            this.classList.add("bg-primary");
+            
+            // 선택된 주차 가져오기
+            const selectedWeek = this.getAttribute("data-week");
+            
+            // 안내 메시지 숨기고 랭킹 컨테이너 표시
+            selectWeekMessage.classList.add("hidden");
+            rankingsContainer.classList.remove("hidden");
+            
+            // 주차별 랭킹 가져오기
+            fetchWeekRankings(selectedWeek);
+          });
+        });
+
+        function fetchWeekRankings(week) {
+          // 로딩 표시 추가 가능
+          $.ajax({
+            url: `/get_rankings/${week}`,
+            type: "GET",
+            success: function(response) {
+              updateRankingsDisplay(response);
+            },
+            error: function(error) {
+              console.error("랭킹을 가져오는데 실패했습니다.", error);
+              alert("랭킹 정보를 불러오는데 실패했습니다.");
+            }
+          });
+        }
+
+        function updateRankingsDisplay(data) {
+          // 점수 표시 업데이트
+          document.getElementById('user-score-display').textContent = 
+            data.has_taken_quiz ? data.user_score : '-';
+          document.getElementById('avg-score-display').textContent = 
+            data.avg_score.toFixed(1);
+          
+          // Y축 레이블 업데이트
+          document.getElementById('max-score-label').textContent = data.max_score + '점';
+          document.getElementById('label-80').textContent = Math.round(data.max_score * 0.8) + '점';
+          document.getElementById('label-60').textContent = Math.round(data.max_score * 0.6) + '점';
+          document.getElementById('label-40').textContent = Math.round(data.max_score * 0.4) + '점';
+          document.getElementById('label-20').textContent = Math.round(data.max_score * 0.2) + '점';
+          
+          // 그래프 높이 비율 계산 (최대 점수 기준)
+          const userBarHeight = data.has_taken_quiz ? (data.user_score / data.max_score * 100) : 0;
+          const avgBarHeight = (data.avg_score / data.max_score * 100);
+          
+          // 그래프 높이 설정
+          document.getElementById('user-bar').style.height = userBarHeight + '%';
+          document.getElementById('avg-bar').style.height = avgBarHeight + '%';
+          
+          // 순위 정보 업데이트
+          const rankInfo = document.querySelector(".bg-gray-50.p-4.rounded-lg");
+          if (rankInfo) {
+            if (!data.has_taken_quiz) {
+              rankInfo.innerHTML = `
+                <p class="text-lg text-gray-600">
+                  아직 이 주차의 시험을 응시하지 않았습니다
+                </p>
+              `;
+            } else if (data.rank_position) {
+              rankInfo.innerHTML = `
+                <p class="text-lg">
+                  <span class="font-bold text-primary">${data.rank_position}등</span>을 기록했습니다!
+                </p>
+                <p class="text-sm text-gray-600 mt-1">
+                  퀴즈 응시자 ${data.members.length}명 중에서 ${data.rank_position}등입니다
+                </p>
+              `;
+            } else {
+              rankInfo.innerHTML = `
+                <p class="text-lg text-gray-600">
+                  순위 정보를 불러올 수 없습니다
+                </p>
+              `;
+            }
+          }
+          
+          // 랭킹 테이블 업데이트
+          const tableBody = document.querySelector("tbody");
+          if (tableBody) {
+            tableBody.innerHTML = "";
+            
+            data.members.forEach((member, index) => {
+              const row = document.createElement("tr");
+              row.className = "border-b border-gray-200 hover:bg-gray-50";
+              row.innerHTML = `
+                <td class="py-3 px-6 text-left whitespace-nowrap">${index + 1}</td>
+                <td class="py-3 px-6 text-left">${member.nickname}</td>
+                <td class="py-3 px-6 text-center">${member.score || 0}</td>
+              `;
+              tableBody.appendChild(row);
+            });
+          }
+        }
         
         // 점수 그래프 초기화 함수 - 단순화
         function initScoreGraph() {
@@ -174,7 +285,7 @@
     <nav class="bg-primary text-text-dark shadow-lg">
       <div class="container mx-auto px-4 py-3">
         <div class="flex justify-between items-center">
-          <a href="/main" class="text-xl font-bold hover:text-gray-700">QuizWeek</a>
+          <a href="/main" class="text-xl font-bold hover:text-gray-700">Q래프톤</a>
           <div class="space-x-4 flex items-center">
             {% if nickname %}
             <span class="text-gray-700 mr-2">{{ nickname }}님 환영합니다</span>
@@ -249,7 +360,7 @@
         <div class="text-9xl font-bold text-primary mb-8">Q</div>
 
         <h1 class="text-4xl font-bold text-text-dark mb-6">
-          QuizWeek에 오신 것을 환영합니다!
+          Q래프톤에 오신 것을 환영합니다!
         </h1>
 
         <p class="text-xl text-gray-600 mb-8">
@@ -289,6 +400,22 @@
           크래프톤 랭킹
         </h2>
         
+        <!-- 주차 선택 버튼 추가 -->
+        <div id="week-buttons" class="flex justify-center space-x-4 mb-6">
+          <button class="week-button bg-primary hover:bg-green-600 text-text-dark font-bold py-2 px-4 rounded" data-week="0">Week 0</button>
+          <button class="week-button bg-gray-300 hover:bg-gray-400 text-text-dark font-bold py-2 px-4 rounded" data-week="1">Week 1</button>
+          <button class="week-button bg-gray-300 hover:bg-gray-400 text-text-dark font-bold py-2 px-4 rounded" data-week="2">Week 2</button>
+          <button class="week-button bg-gray-300 hover:bg-gray-400 text-text-dark font-bold py-2 px-4 rounded" data-week="3">Week 3</button>
+        </div>
+        
+        <!-- 주차를 선택하라는 안내 메시지 (초기에 표시) -->
+        <div id="select-week-message" class="bg-white shadow-md rounded-lg p-8 text-center">
+          <p class="text-xl text-gray-600">주차를 선택하여 해당 주차의 랭킹을 확인하세요.</p>
+        </div>
+        
+        <!-- 랭킹 정보 표시 부분 (처음에는 숨김) -->
+        <div id="rankings-container" class="hidden">
+
         <!-- 통계 그래프 및 백분위 섹션 수정 -->
         <div class="bg-white shadow-md rounded-lg p-6 mb-6 text-center">
           <h3 class="text-xl font-bold text-text-dark mb-4">점수 비교</h3>
@@ -384,7 +511,7 @@
     <!-- 푸터 -->
     <footer class="bg-black text-primary py-2 fixed bottom-0 w-full">
       <div class="container mx-auto px-4 text-center">
-        <p class="text-sm">&copy; QuizWeek. 크래프톤 정글 9기 4팀.</p>
+        <p class="text-sm">&copy; Q래프톤. 크래프톤 정글 9기 4팀.</p>
       </div>
     </footer>
   </body>

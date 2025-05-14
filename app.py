@@ -186,8 +186,14 @@ def quiz_start():
             last_index = user.get('last_question_index', 0)
             return redirect(f'/quiz/play/{last_index}')
 
-        # 👉 week 파라미터는 받아오되 무시
+        # week 파라미터 가져오기
         week = request.args.get('week', default=0, type=int)
+
+        # 사용자 문서에 현재 퀴즈 주차 저장
+        db.member.update_one(
+            {'userid': current_user_id},
+            {'$set': {'current_quiz_week': week}}
+        )
 
         # ✅ week와 상관없이 quiz_list에서 무작위 5문제 추출
         all_quizzes = list(db.quiz_list.find())
@@ -459,11 +465,18 @@ def quiz_finish():
             members = list(db.member.find())
             quiz_takers = [member for member in members if member['userid'] in quiz_taken_users]
             
+            # 주차 정보 가져오기 (사용자 문서에서)
+            week = user.get('current_quiz_week', 0)  # 기본값 0
+            score_field = f'score_{week}'
+            
             # 점수 계산 및 순위 업데이트
             user_score = correct_cnt
             db.member.update_one(
                 {'userid': current_user_id},
-                {'$set': {'score': user_score}}
+                {'$set': {
+                    'score': user_score,  # 기존 필드 유지 (호환성)
+                    score_field: user_score  # 주차별 점수 필드
+                }}
             )
             
             # 점수 기준 정렬
@@ -481,8 +494,7 @@ def quiz_finish():
                 'is_correct': False
             }))
             
-            # wrong_questions = []
-            # 기존 wrong_questions 부분을 수정
+            # 틀린 문제 목록 작성
             wrong_questions = []
             for wrong in wrong_answers:
                 q_id = wrong.get('question_id')
@@ -494,7 +506,7 @@ def quiz_finish():
                     wrong_questions.append({
                         'question': question.get('question', ''),
                         'answer': question.get('answer', ''),
-                        'userAnswer': wrong.get('user_answer', '')  # 수정: user_answer -> userAnswer
+                        'userAnswer': wrong.get('user_answer', '')
                     })
 
             # 사용자 문서에 틀린 문제 저장
@@ -524,6 +536,88 @@ def quiz_finish():
         return redirect('/main')
 
     return redirect('/main')
+
+@app.route('/get_rankings/<int:week>')
+def get_rankings(week):
+    token = request.cookies.get('mytoken')
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
+        current_user_id = payload['id']
+        
+        # 주차별 점수 필드 이름
+        score_field = f'score_{week}'
+        
+        # 수정된 get_user_rank 함수 로직으로 주차별 랭킹 계산
+        def get_week_rank(userid, week_score_field):
+            members = list(db.member.find())
+            
+            # 이 주차의 퀴즈를 응시한 사용자 ID 목록 가져오기
+            quiz_taken_users = set(
+                member['userid'] for member in members 
+                if week_score_field in member and member[week_score_field] is not None
+            )
+            
+            # 이 주차의 퀴즈를 응시한 사용자만 필터링
+            quiz_takers = [
+                member for member in members 
+                if member['userid'] in quiz_taken_users
+            ]
+            
+            # 점수로 정렬
+            quiz_takers.sort(key=lambda x: x.get(week_score_field, 0), reverse=True)
+            
+            # 퀴즈 응시자 목록에서의 순위 계산
+            rank = next(
+                (i for i, m in enumerate(quiz_takers, start=1) if m['userid'] == userid), 
+                None
+            )
+            
+            # 점수 통계 계산 - 퀴즈 응시자만 포함
+            if quiz_takers:
+                total_score = sum(member.get(week_score_field, 0) for member in quiz_takers)
+                avg_score = total_score / len(quiz_takers)
+                max_score = max(
+                    (member.get(week_score_field, 0) for member in quiz_takers), 
+                    default=10
+                )
+            else:
+                avg_score = 0
+                max_score = 10
+            
+            # 사용자가 이 주차의 퀴즈를 응시했는지 확인
+            has_taken_quiz = userid in quiz_taken_users
+            
+            # 사용자 점수 가져오기
+            user = next((member for member in members if member['userid'] == userid), None)
+            user_score = user.get(week_score_field, 0) if user else 0
+            
+            return quiz_takers, rank, user_score, avg_score, max_score, has_taken_quiz
+        
+        # 주차별 랭킹 가져오기
+        quiz_takers, rank_position, user_score, avg_score, max_score, has_taken_quiz = get_week_rank(current_user_id, score_field)
+        
+        # JSON 응답 준비
+        response_data = {
+            'members': [
+                {
+                    'userid': member['userid'],
+                    'nickname': member['nickname'],
+                    'score': member.get(score_field, 0)
+                } for member in quiz_takers
+            ],
+            'rank_position': rank_position,
+            'user_score': user_score,
+            'avg_score': avg_score,
+            'max_score': max_score,
+            'has_taken_quiz': has_taken_quiz
+        }
+        
+        return jsonify(response_data)
+        
+    except jwt.ExpiredSignatureError:
+        return jsonify({'error': 'token_expired'}), 401
+    except jwt.exceptions.DecodeError:
+        return jsonify({'error': 'token_invalid'}), 401
 
 # 로그아웃
 @app.route('/logout')
