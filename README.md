@@ -29,11 +29,9 @@ python -m venv venv
 venv\Scripts\activate
 # macOS/Linux:
 source venv/bin/activate
-
-# 깃배시:
+# GitBash:
 source venv/scripts/activate
-
-*가성 환경 비활성화 : deactivate
+*비활성화:deactivate
 
 # 4. 의존성 설치
 pip install -r requirements.txt
