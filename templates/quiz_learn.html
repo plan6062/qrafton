@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, shrink-to-fit=no"
+    />
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- 사용자 정의 색상 추가 -->
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              'primary': '#05D182',
+              'text-dark': '#494949',
+            }
+          }
+        }
+      }
+    </script>
+
+    <!-- JS -->
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+
+    <!-- 구글폰트 -->
+    <link
+      href="https://fonts.googleapis.com/css?family=Stylish&display=swap"
+      rel="stylesheet"
+    />
+
+    <title>QuizWeek - 학습 모드</title>
+    
+    <script>
+      document.addEventListener("DOMContentLoaded", function() {
+        // 학습 모드 문제 카운트 초기화 (세션 스토리지 사용)
+        if (!sessionStorage.getItem('learnQuizCount')) {
+          sessionStorage.setItem('learnQuizCount', '0');
+          // 틀린 문제 배열 초기화
+          sessionStorage.setItem('learnWrongQuestions', JSON.stringify([]));
+        }
+        
+        // 현재 풀이한 문제 수 표시
+        const solvedCount = parseInt(sessionStorage.getItem('learnQuizCount'));
+        document.getElementById('solved-count').textContent = solvedCount;
+        
+        // 답변 제출 처리
+        const answerForm = document.getElementById("answer-form");
+        
+        answerForm.addEventListener("submit", function(e) {
+          e.preventDefault();
+          
+          const userAnswer = document.getElementById("user-answer").value.trim();
+          const correctAnswer = document.getElementById("correct-answer").value.trim();
+          const questionId = document.getElementById("question-id").value;
+          const questionText = document.querySelector(".bg-gray-50 p").textContent;
+          const resultDiv = document.getElementById("result");
+          const nextButton = document.getElementById("next-button");
+          
+          if (userAnswer.toLowerCase() === correctAnswer.toLowerCase()) {
+            resultDiv.innerHTML = `
+              <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-4" role="alert">
+                <p class="font-bold">정답입니다!</p>
+                <p>정확한 답변: ${correctAnswer}</p>
+              </div>
+            `;
+            
+            // 정답 처리를 위한 AJAX 요청
+            fetch('/quiz/answer', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                question_id: questionId,
+                is_correct: true,
+                mode: 'learn'
+              }),
+            });
+          } else {
+            resultDiv.innerHTML = `
+              <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4" role="alert">
+                <p class="font-bold">오답입니다!</p>
+                <p>정확한 답변: ${correctAnswer}</p>
+              </div>
+            `;
+            
+            // 오답일 경우 틀린 문제 저장
+            const wrongQuestions = JSON.parse(sessionStorage.getItem('learnWrongQuestions') || '[]');
+            wrongQuestions.push({
+              id: questionId,
+              question: questionText,
+              answer: correctAnswer,
+              userAnswer: userAnswer
+            });
+            sessionStorage.setItem('learnWrongQuestions', JSON.stringify(wrongQuestions));
+            
+            // 오답 처리를 위한 AJAX 요청
+            fetch('/quiz/answer', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                question_id: questionId,
+                is_correct: false,
+                mode: 'learn'
+              }),
+            });
+          }
+          
+          // 제출 버튼 숨기기
+          document.getElementById("submit-button").classList.add("hidden");
+          
+          // 푼 문제 수 증가
+          const newCount = solvedCount + 1;
+          sessionStorage.setItem('learnQuizCount', newCount.toString());
+          document.getElementById('solved-count').textContent = newCount;
+          
+          // 다음 문제 버튼 표시
+          nextButton.classList.remove("hidden");
+        });
+        
+        // 학습 중단 버튼 - 홈으로 이동
+        document.getElementById("stop-learn-button").addEventListener("click", function(e) {
+          // 틀린 문제 정보를 서버에 저장하고 홈으로 이동
+          const wrongQuestions = sessionStorage.getItem('learnWrongQuestions');
+          if (wrongQuestions) {
+            fetch('/quiz/save_wrong', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: wrongQuestions
+            }).then(() => {
+              // 데이터 저장 후 홈으로 이동
+              window.location.href = "/main";
+            });
+          } else {
+            // 저장할 데이터가 없으면 바로 홈으로 이동
+            window.location.href = "/main";
+          }
+          e.preventDefault(); // 기본 동작 방지
+        });
+      });
+    </script>
+  </head>
+
+  <body class="bg-gray-100 font-sans">
+    <!-- 네비게이션 바 -->
+    <nav class="bg-primary text-text-dark shadow-lg">
+      <div class="container mx-auto px-4 py-3">
+        <div class="flex justify-between items-center">
+          <div class="text-xl font-bold">QuizWeek</div>
+          <div class="space-x-4 flex items-center">
+            {% if nickname %}
+            <span class="text-gray-700 mr-2">{{ nickname }}님 환영합니다</span>
+            <a
+              href="/logout"
+              class="bg-black hover:bg-gray-800 px-3 py-1 rounded text-primary text-sm"
+              >로그아웃</a
+            >
+            {% else %}
+            <a href="/register" class="hover:text-gray-700 font-medium"
+              >회원가입</a
+            >
+            <a
+              href="/"
+              class="bg-black hover:bg-gray-800 px-3 py-1 rounded text-primary text-sm"
+              >로그인</a
+            >
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- 퀴즈 컨텐츠 -->
+    <div class="container mx-auto px-4 py-8 mb-12">
+      <div class="max-w-2xl mx-auto bg-white rounded-lg shadow-lg p-6">
+        <!-- 퀴즈 아이콘 및 카운트 -->
+        <div class="flex justify-between items-center mb-4">
+          <div class="text-6xl font-bold text-primary">Q</div>
+          <div class="text-xl font-bold text-text-dark">푼 문제 수: <span id="solved-count">0</span></div>
+        </div>
+        
+        <h1 class="text-2xl font-bold text-text-dark mb-6 text-center">학습 모드</h1>
+        
+        <!-- 질문 -->
+        <div class="bg-gray-50 p-6 rounded-lg mb-6">
+          <p class="text-xl text-text-dark">{{ quiz.question }}</p>
+        </div>
+        
+        <!-- 답변 폼 -->
+        <form id="answer-form">
+          <input type="hidden" id="question-id" value="{{ quiz._id }}">
+          <input type="hidden" id="correct-answer" value="{{ quiz.answer }}">
+          
+          <div class="mb-6">
+            <label for="user-answer" class="block text-text-dark mb-2">답변:</label>
+            <input
+              type="text"
+              id="user-answer"
+              class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              required
+              autocomplete="off"
+              autofocus
+            />
+          </div>
+          
+          <!-- 결과 표시 영역 -->
+          <div id="result" class="mb-4"></div>
+          
+          <div class="flex justify-between">
+            <!-- 왼쪽에 학습 중단 버튼 -->
+            <a
+              href="#"
+              id="stop-learn-button"
+              class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+            >
+              학습 중단하기
+            </a>
+            
+            <div>
+              <button
+                type="submit"
+                id="submit-button"
+                class="bg-black hover:bg-gray-800 text-primary font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+              >
+                제출하기
+              </button>
+              
+              <a
+                href="/quiz/learn"
+                id="next-button"
+                class="bg-primary hover:bg-green-600 text-text-dark font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline hidden"
+              >
+                다음 문제
+              </a>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- 푸터 -->
+    <footer class="bg-black text-primary py-2 fixed bottom-0 w-full">
+      <div class="container mx-auto px-4 text-center">
+        <p class="text-sm">&copy; QuizWeek. 크래프톤 정글 9기 4팀.</p>
+      </div>
+    </footer>
+  </body>
+</html>

@@ -316,7 +316,7 @@ def quiz_learn():
         # 랜덤 퀴즈 1개 선택
         quiz = random.choice(all_quizzes)
 
-        return render_template("quiz.html", quiz=quiz, nickname=user['nickname'], is_learn=True)
+        return render_template("quiz_learn.html", quiz=quiz, nickname=user['nickname'], is_learn=True)
 
     except jwt.ExpiredSignatureError:
         return redirect('/')
