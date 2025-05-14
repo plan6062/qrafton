@@ -210,14 +210,26 @@
           겨뤄보세요.
         </p>
 
-        <!-- 시작하기 버튼 -->
-        <a
-          href="/quiz/start"
-          class="bg-primary hover:bg-green-600 text-text-dark font-bold py-3 px-8 rounded-lg text-xl shadow-lg transition duration-300"
-        >
-          시작하기
-        </a>
-      </div>
+    
+<!-- 시작하기 버튼을 누르면 아래 모드 선택 버튼이 표시되도록 -->
+<button id="start-button" class="bg-primary hover:bg-green-600 text-text-dark font-bold py-3 px-8 rounded-lg text-xl shadow-lg transition duration-300">
+  시작하기
+</button>
+<div id="mode-selection" class="mt-6 hidden">
+  <a href="/quiz/learn_mode" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-6 rounded mr-4">학습 모드</a>
+  <a href="/quiz/exam_mode" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-6 rounded">시험 모드</a>
+</div>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const startBtn = document.getElementById('start-button');
+    const modeBox = document.getElementById('mode-selection');
+
+    startBtn.addEventListener('click', () => {
+      startBtn.classList.add('hidden');
+      modeBox.classList.remove('hidden');
+    });
+  });
+</script>
 
       <!-- 순위 탭 콘텐츠 -->
       <div id="content-ranking" class="tab-content max-w-4xl mx-auto hidden">
