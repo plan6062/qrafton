@@ -283,103 +283,49 @@
         </div>
       </div>
 
-      <!-- 순위 탭 콘텐츠 -->
-      <div id="content-ranking" class="tab-content max-w-4xl mx-auto hidden">
-        <h2 class="text-3xl font-bold text-center text-text-dark mb-6">
-          크래프톤 랭킹
-        </h2>
-        
-        <!-- 통계 그래프 및 백분위 섹션 수정 -->
-        <div class="bg-white shadow-md rounded-lg p-6 mb-6 text-center">
-          <h3 class="text-xl font-bold text-text-dark mb-4">점수 비교</h3>
-          
-          <!-- 그래프 컨테이너 - 수정된 구조 -->
-          <div class="flex justify-center pt-2 mb-8">
-            <!-- Y축 레이블 -->
-            <div class="flex flex-col justify-between text-xs text-gray-500 pr-2 h-32">
-              <span id="max-score-label">{{ max_score|default(10) }}점</span>
-              <span id="label-80">{{ (max_score|default(10) * 0.8)|int }}점</span>
-              <span id="label-60">{{ (max_score|default(10) * 0.6)|int }}점</span>
-              <span id="label-40">{{ (max_score|default(10) * 0.4)|int }}점</span>
-              <span id="label-20">{{ (max_score|default(10) * 0.2)|int }}점</span>
-              <span>0점</span>
-            </div>
-            
-            <!-- 그래프 영역 - 텍스트를 바깥으로 분리 -->
-            <div class="ml-4">
-              <!-- 그래프 막대들 -->
-              <div class="flex space-x-12 h-32">
-                <!-- 평균 점수 막대 -->
-                <div class="w-20 bg-gray-100 flex items-end">
-                  <div id="avg-bar" class="w-full bg-gray-500 rounded-t" style="height: 0%"></div>
-                </div>
-                
-                <!-- 사용자 점수 막대 -->
-                <div class="w-20 bg-gray-100 flex items-end">
-                  <div id="user-bar" class="w-full bg-primary rounded-t" style="height: 0%"></div>
-                </div>
-              </div>
-              
-              <!-- 텍스트 라벨 -->
-              <div class="flex space-x-12 mt-2">
-                <div class="w-20 text-xs font-medium text-gray-600 text-center">
-                  평균 <span id="avg-score-display">{{ avg_score|default(0)|round(1) }}</span>점
-                </div>
-                <div class="w-20 text-xs font-medium text-primary text-center">
-                  내 점수 <span id="user-score-display">{{ user_score|default(0) }}</span>점
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <!-- 점수 정보 -->
-          <div class="bg-gray-50 p-4 rounded-lg mb-4 text-center max-w-md mx-auto">
-            {% if not has_taken_quiz %}
-              <p class="text-lg text-gray-600">
-                아직 시험을 응시하지 않았습니다
-              </p>
-            {% elif rank_position %}
-              <p class="text-lg">
-                <span class="font-bold text-primary">{{ rank_position }}등</span>을 기록했습니다!
-              </p>
-              <p class="text-sm text-gray-600 mt-1">
-                퀴즈 응시자 {{ members|length }}명 중에서 {{ rank_position }}등입니다
-              </p>
-            {% else %}
-              <p class="text-lg text-gray-600">
-                로그인하시면 순위 정보를 확인할 수 있습니다
-              </p>
-            {% endif %}
-          </div>
-        </div>
+     <!-- 순위 탭 콘텐츠 -->
+<div id="content-ranking" class="tab-content max-w-4xl mx-auto hidden">
+  <h2 class="text-3xl font-bold text-center text-text-dark mb-6">크래프톤 랭킹</h2>
 
-        <!-- 기존 순위 표 -->
-        <div class="bg-white shadow-md rounded-lg overflow-hidden">
-          <table class="min-w-full">
-            <thead>
-              <tr
-                class="bg-gray-100 text-gray-600 uppercase text-sm leading-normal"
-              >
-                <th class="py-3 px-6 text-left">순위</th>
-                <th class="py-3 px-6 text-left">닉네임</th>
-                <th class="py-3 px-6 text-center">정답 개수</th>
-              </tr>
-            </thead>
-            <tbody class="text-gray-600 text-sm">
-              {% for member in members %}
-              <tr class="border-b border-gray-200 hover:bg-gray-50">
-                <td class="py-3 px-6 text-left whitespace-nowrap">
-                  {{ loop.index }}
-                </td>
-                <td class="py-3 px-6 text-left">{{ member.nickname }}</td>
-                <td class="py-3 px-6 text-center">{{ member.score or 0 }}</td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-      </div>
+  <!-- ✅ 주차 선택 버튼 -->
+  <div id="week-selector" class="flex justify-center space-x-4 mb-6">
+    {% for week in range(4) %}
+    <button
+      class="week-tab bg-black hover:bg-gray-800 text-primary font-bold py-6 px-8 rounded-lg text-xl shadow-lg transition duration-300 text-center block"
+      data-week="{{ week }}">
+      Week {{ week }}
+    </button>
+    {% endfor %}
+  </div>
+
+  <!-- ✅ Week별 순위 콘텐츠 (처음에는 Week 0만 보임) -->
+  {% for week in range(4) %}
+  <div class="week-ranking hidden" id="week-{{ week }}">
+    <div class="bg-white shadow-md rounded-lg overflow-hidden mb-10">
+      <h3 class="text-xl font-bold text-text-dark my-4 text-center">Week {{ week }} 순위</h3>
+      <table class="min-w-full">
+        <thead>
+          <tr class="bg-gray-100 text-gray-600 uppercase text-sm leading-normal">
+            <th class="py-3 px-6 text-left">순위</th>
+            <th class="py-3 px-6 text-left">닉네임</th>
+            <th class="py-3 px-6 text-center">정답 개수</th>
+          </tr>
+        </thead>
+        <tbody class="text-gray-600 text-sm">
+          {% for member in members %}
+          <tr class="border-b border-gray-200 hover:bg-gray-50">
+            <td class="py-3 px-6 text-left whitespace-nowrap">{{ loop.index }}</td>
+            <td class="py-3 px-6 text-left">{{ member.nickname }}</td>
+            <td class="py-3 px-6 text-center">{{ member.score or 0 }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
+  </div>
+  {% endfor %}
+</div>
+
 
     <!-- 푸터 -->
     <footer class="bg-black text-primary py-2 fixed bottom-0 w-full">
