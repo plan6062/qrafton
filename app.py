@@ -167,15 +167,32 @@ def quiz_start():
         
         if not user:
             return redirect('/')
-            
-        # 세션에 퀴즈 카운트가 없으면 사용자의 퀴즈 기록 초기화
-        quiz_list = list(db.quiz_list.find())  # quiz 컬렉션
-        quiz = random.choice(quiz_list)  # 랜덤으로 문제 하나 선택
         
-        return render_template("quiz.html", quiz=quiz, nickname=user['nickname'])
-    except:
-        return redirect('/')
+        # 1. 유저가 푼 문제의 question_id 목록 가져오기
+        answered_question_ids = db.answers.find(
+            {'userid': current_user_id},
+            {'question_id': 1, '_id': 0}
+        )
+        answered_ids = {a['question_id'] for a in answered_question_ids}
 
+        # 2. 아직 풀지 않은 퀴즈만 필터링
+        all_quizzes = list(db.quiz_list.find())
+        unanswered_quizzes = [q for q in all_quizzes if str(q['_id']) not in answered_ids]
+
+        if not unanswered_quizzes:
+            return render_template("quiz_finish.html", nickname=user['nickname'], correct_cnt=user.get('score', 0),
+                                   my_rank=None, wrong_questions=user.get('wrong_questions', []),
+                                   message="모든 문제를 다 푸셨습니다!")
+
+        # 3. 아직 풀지 않은 퀴즈 중 랜덤 선택
+        quiz = random.choice(unanswered_quizzes)
+
+        return render_template("quiz.html", quiz=quiz, nickname=user['nickname'])
+
+    except jwt.ExpiredSignatureError:
+        return redirect('/')
+    except jwt.exceptions.DecodeError:
+        return redirect('/')
 # 퀴즈 답변 제출 처리
 @app.route('/quiz/answer', methods=['POST'])
 def quiz_answer():
