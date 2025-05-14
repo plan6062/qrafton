@@ -37,12 +37,30 @@
   </head>
 
   <body class="bg-gray-100 font-sans">
+    {% if has_pending_quiz %}
+    <script>
+      // 미완료 시험이 있는 경우에만 로드되는 스크립트
+      document.addEventListener("DOMContentLoaded", function() {
+        const logoutBtn = document.querySelector("a[href='/']");
+        if (logoutBtn) {
+          logoutBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            if (confirm("진행 중인 시험이 있습니다. 로그아웃 시 시험이 완료되지 않은 상태로 기록됩니다. 정말 로그아웃하시겠습니까?")) {
+              window.location.href = '/logout';
+            }
+          });
+        }
+      });
+    </script>
+    {% endif %}
+    
     <script>
       document.addEventListener("DOMContentLoaded", function () {
        
         //홈으로 나간 경우 세션 초기화
-       sessionStorage.removeItem('learnQuizCount');
-      sessionStorage.removeItem('learnWrongQuestions');
+        sessionStorage.removeItem('learnQuizCount');
+        sessionStorage.removeItem('learnWrongQuestions');
        
         // 탭 전환 기능 구현
         const tabButtons = document.querySelectorAll(".tab-button");
@@ -214,6 +232,19 @@
     <div class="container mx-auto px-4 py-8 mb-12">
       <!-- 홈 탭 콘텐츠 -->
       <div id="content-home" class="tab-content max-w-2xl mx-auto text-center">
+        <!-- 미완료 시험이 있을 경우 알림 추가 -->
+        {% if has_pending_quiz %}
+        <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-8" role="alert">
+          <p class="font-bold">미완료된 시험이 있습니다!</p>
+          <p class="mb-2">이전에 시작했지만 완료하지 않은 시험이 있습니다. 시험을 완료해야 정확한 점수가 기록됩니다.</p>
+          <div class="mt-3">
+            <a href="/quiz/resume" class="bg-primary hover:bg-green-600 text-text-dark font-bold py-2 px-4 rounded inline-block">
+              시험 계속하기
+            </a>
+          </div>
+        </div>
+        {% endif %}
+        
         <!-- 로고 또는 큰 Q -->
         <div class="text-9xl font-bold text-primary mb-8">Q</div>
 

@@ -133,19 +133,27 @@ def main():
         user = db.member.find_one({'userid': current_user_id})
 
         if user:
+            # 미완료 시험이 있는지 확인
+            pending_quiz = db.temp_quiz.find_one({
+                'userid': current_user_id
+            })
+            
+            has_pending_quiz = pending_quiz is not None and not user.get('quiz_completed', False)
+            
             # 수정된 부분: members 변수가 이제 quiz_takers를 의미함
             quiz_takers, rank_position, user_score, avg_score, max_score, has_taken_quiz = get_user_rank(current_user_id)
             
             return render_template(
                 'main.html',
                 nickname=user['nickname'],
-                members=quiz_takers,  # 퀴즈 응시자 목록
+                members=quiz_takers,
                 rank_position=rank_position,
                 user_id=current_user_id,
                 user_score=user_score,
                 avg_score=avg_score,
                 max_score=max_score,
-                has_taken_quiz=has_taken_quiz
+                has_taken_quiz=has_taken_quiz,
+                has_pending_quiz=has_pending_quiz
             )
     except jwt.ExpiredSignatureError:
         return redirect('/')
@@ -168,28 +176,87 @@ def quiz_start():
         if not user:
             return redirect('/')
 
-        # 이미 퀴즈에 응시했는지 확인
-        already_taken = db.answers.find_one({'userid': current_user_id})
-        if already_taken:
-            return redirect('/quiz/finish')  # 응시했으면 결과 페이지로 보냄
-
+        # 이미 퀴즈를 완료했는지 확인
+        completed = db.member.find_one({
+            'userid': current_user_id,
+            'quiz_completed': True
+        })
+        
+        if completed:
+            return redirect('/quiz/finish')  # 완료했으면 결과 페이지로 보냄
+        
+        # 진행 중인 시험이 있는지 확인
+        quiz_started = db.temp_quiz.find_one({'userid': current_user_id})
+        
+        if quiz_started:
+            # 진행 중인 시험이 있으면 마지막 문제로 이동
+            last_index = user.get('last_question_index', 0)
+            return redirect(f'/quiz/play/{last_index}')
+        
+        # 아직 시험을 시작하지 않은 경우만 새 시험 생성
         # 문제 5개를 랜덤으로 선택
         all_quizzes = list(db.quiz_list.find())
         selected_quizzes = random.sample(all_quizzes, 5)
 
-        # 기존 임시 퀴즈 삭제 후 새로 저장
-        db.temp_quiz.delete_many({'userid': current_user_id})
+        # 새 퀴즈 저장
         for quiz in selected_quizzes:
             db.temp_quiz.insert_one({
                 'userid': current_user_id,
                 'question_id': str(quiz['_id']),
                 'question': quiz['question'],
-                'answer': quiz['answer']
+                'answer': quiz['answer'],
+                'answered': False
             })
-
+        
+        # 퀴즈 진행 상태 초기화
+        db.member.update_one(
+            {'userid': current_user_id},
+            {'$set': {
+                'quiz_in_progress': True,
+                'quiz_start_time': datetime.datetime.now(),
+                'last_question_index': 0,
+                'quiz_completed': False  # 명시적으로 완료되지 않음을 표시
+            }}
+        )
+        
         # 첫 번째 문제 페이지로 이동
         return redirect('/quiz/play/0')
 
+    except jwt.ExpiredSignatureError:
+        return redirect('/')
+    except jwt.exceptions.DecodeError:
+        return redirect('/')
+
+@app.route('/quiz/resume')
+def quiz_resume():
+    token = request.cookies.get('mytoken')
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
+        current_user_id = payload['id']
+        user = db.member.find_one({'userid': current_user_id})
+        
+        if not user:
+            return redirect('/')
+            
+        # 진행 중인 시험이 있는지 확인
+        quiz_exists = db.temp_quiz.find_one({'userid': current_user_id})
+        
+        if not quiz_exists:
+            return redirect('/quiz/start')  # 없으면 새로 시작
+            
+        # 퀴즈 진행 중 상태로 표시
+        db.member.update_one(
+            {'userid': current_user_id},
+            {'$set': {
+                'quiz_in_progress': True,
+                'quiz_completed': False  # 명시적으로 완료되지 않음을 표시
+            }}
+        )
+        
+        # 마지막 문제로 이동
+        last_index = user.get('last_question_index', 0)
+        return redirect(f'/quiz/play/{last_index}')
+        
     except jwt.ExpiredSignatureError:
         return redirect('/')
     except jwt.exceptions.DecodeError:
@@ -203,21 +270,31 @@ def quiz_play(index):
         current_user_id = payload['id']
         user = db.member.find_one({'userid': current_user_id})
 
+        # 현재 인덱스를 저장
+        db.member.update_one(
+            {'userid': current_user_id},
+            {'$set': {'last_question_index': index}}
+        )
+
         quizzes = list(db.temp_quiz.find({'userid': current_user_id}))
         if index >= len(quizzes):
             return redirect('/quiz/finish')
 
         quiz = quizzes[index]
         
-        # 문제 번호를 1부터 시작하도록 설정
-        question_number = index + 1
+        # 문제가 이미 답변되었는지 확인
+        is_answered = quiz.get('answered', False)
         
-        return render_template("quiz.html", 
-                              quiz=quiz, 
-                              index=index, 
-                              question_number=question_number,  # 현재 문제 번호 전달
-                              total_questions=len(quizzes),     # 총 문제 수 전달
-                              nickname=user['nickname'])
+        return render_template(
+            "quiz.html", 
+            quiz=quiz, 
+            index=index, 
+            is_answered=is_answered,
+            question_number=index + 1,
+            total_questions=len(quizzes),
+            nickname=user['nickname'],
+            quiz_in_progress=True
+        )
 
     except:
         return redirect('/')
@@ -248,11 +325,30 @@ def quiz_submit():
     except:
         return redirect('/')
 
+@app.route('/quiz/save_progress', methods=['POST'])
+def save_quiz_progress():
+    data = request.json
+    token = request.cookies.get('mytoken')
     
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
+        current_user_id = payload['id']
+        
+        # 현재 진행 상태 저장
+        db.member.update_one(
+            {'userid': current_user_id},
+            {'$set': {
+                'last_question_index': data.get('current_index', 0)
+            }}
+        )
+        
+        return jsonify({'status': 'success'})
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)})
+    
+    return jsonify({'status': 'error'})
     
 # 퀴즈 답변 제출 처리
-# app.py에 수정할 코드
-
 @app.route('/quiz/answer', methods=['POST'])
 def quiz_answer():
     data = request.json
@@ -261,52 +357,37 @@ def quiz_answer():
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
         current_user_id = payload['id']
-        user = db.member.find_one({'userid': current_user_id})
         
-        if user:
-            # 학습 모드라면 score 반영도, 기록도 하지 않음
-            if data.get('mode') == 'learn':
-                return jsonify({'status': 'success', 'message': 'learn mode - not recorded'})
-          
-            # 답변 기록 저장
-            answer_record = {
+        # 해당 문제를 답변 완료로 표시
+        db.temp_quiz.update_one(
+            {
                 'userid': current_user_id,
-                'question_id': data.get('question_id'),
-                'is_correct': data.get('is_correct'),
-                'timestamp': datetime.datetime.now()
-            }
-            
-            # 사용자의 답변도 저장
-            if data.get('user_answer'):
-                answer_record['user_answer'] = data.get('user_answer')
-            
-            # 틀린 문제인 경우, 틀린 문제 목록에 추가
-            if not data.get('is_correct'):
-                question = db.quiz_list.find_one({'_id': data.get('question_id')})
-                if question:
-                    wrong_question = {
-                        'id': str(question['_id']),
-                        'question': question['question'],
-                        'answer': question['answer'],
-                        'user_answer': data.get('user_answer', '')
-                    }
-                    # 틀린 문제 목록에 추가 (중복 방지)
-                    db.member.update_one(
-                        {'userid': current_user_id},
-                        {'$addToSet': {'wrong_questions': wrong_question}}
-                    )
-            
-            if data.get('is_correct'):
-                # 정답인 경우 점수 증가
-                db.member.update_one(
-                    {'userid': current_user_id},
-                    {'$inc': {'score': 1}}
-                )
-            
-            # 답변 기록 저장
-            db.answers.insert_one(answer_record)
-            
-            return jsonify({'status': 'success'})
+                'question_id': data.get('question_id')
+            },
+            {'$set': {'answered': True}}
+        )
+        
+        # 학습 모드라면 score 반영도, 기록도 하지 않음
+        if data.get('mode') == 'learn':
+            return jsonify({'status': 'success', 'message': 'learn mode - not recorded'})
+      
+        if data.get('is_correct'):
+            # 정답인 경우 점수 증가
+            db.member.update_one(
+                {'userid': current_user_id},
+                {'$inc': {'score': 1}}
+            )
+        
+        # 답변 기록 저장
+        db.answers.insert_one({
+            'userid': current_user_id,
+            'question_id': data.get('question_id'),
+            'is_correct': data.get('is_correct'),
+            'user_answer': data.get('user_answer', ''),
+            'timestamp': datetime.datetime.now()
+        })
+        
+        return jsonify({'status': 'success'})
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)})
     
@@ -345,15 +426,43 @@ def quiz_finish():
         user = db.member.find_one({'userid': current_user_id})
 
         if user:
+            # 시험을 본 적이 있는지 확인
+            quiz_exists = db.temp_quiz.find_one({'userid': current_user_id})
+            if not quiz_exists:
+                return redirect('/main')  # 시험을 본 적이 없으면 메인으로
+            
+            # 모든 문제에 답변했는지 확인
+            all_questions = list(db.temp_quiz.find({'userid': current_user_id}))
+            answered_count = sum(1 for q in all_questions if q.get('answered', False))
+            
+            # 완료 상태 표시 (모든 문제를 풀었는지와 상관없이)
+            db.member.update_one(
+                {'userid': current_user_id},
+                {'$set': {
+                    'quiz_completed': True,
+                    'quiz_in_progress': False
+                }}
+            )
+            
             nickname = user['nickname']
-            correct_cnt = user.get('score', 0)  # 맞은 개수는 score 필드에서
-
+            correct_cnt = db.answers.count_documents({
+                'userid': current_user_id, 
+                'is_correct': True
+            })
+            
             # 퀴즈를 응시한 사용자의 ID 목록 가져오기
             quiz_taken_users = set(answer['userid'] for answer in db.answers.find({}, {'userid': 1}))
             
             # 모든 유저 목록에서 퀴즈 응시자만 필터링
             members = list(db.member.find())
             quiz_takers = [member for member in members if member['userid'] in quiz_taken_users]
+            
+            # 점수 계산 및 순위 업데이트
+            user_score = correct_cnt
+            db.member.update_one(
+                {'userid': current_user_id},
+                {'$set': {'score': user_score}}
+            )
             
             # 점수 기준 정렬
             quiz_takers.sort(key=lambda x: x.get('score', 0), reverse=True)
@@ -365,13 +474,40 @@ def quiz_finish():
             )
             
             # 틀린 문제 정보 가져오기
-            wrong_questions = user.get('wrong_questions', [])
+            wrong_answers = list(db.answers.find({
+                'userid': current_user_id,
+                'is_correct': False
+            }))
             
-            return render_template("quiz_finish.html",
-                                  nickname=nickname,
-                                  correct_cnt=correct_cnt,
-                                  my_rank=my_rank,
-                                  wrong_questions=wrong_questions)
+            wrong_questions = []
+            for wrong in wrong_answers:
+                q_id = wrong.get('question_id')
+                question = db.temp_quiz.find_one({
+                    'userid': current_user_id,
+                    'question_id': q_id
+                })
+                if question:
+                    wrong_questions.append({
+                        'question': question.get('question', ''),
+                        'answer': question.get('answer', ''),
+                        'user_answer': wrong.get('user_answer', '')
+                    })
+            
+            # 미완료 문제 수 계산
+            incomplete_count = len(all_questions) - answered_count
+            incomplete_warning = None
+            if incomplete_count > 0:
+                incomplete_warning = f"{incomplete_count}개 문제를 풀지 않았습니다. 풀지 않은 문제는 오답으로 처리됩니다."
+            
+            return render_template(
+                "quiz_finish.html",
+                nickname=nickname,
+                correct_cnt=correct_cnt,
+                total_cnt=len(all_questions),
+                my_rank=my_rank,
+                wrong_questions=wrong_questions,
+                incomplete_warning=incomplete_warning
+            )
     except jwt.ExpiredSignatureError:
         return redirect('/main')
     except jwt.exceptions.DecodeError:
@@ -382,13 +518,34 @@ def quiz_finish():
 # 로그아웃
 @app.route('/logout')
 def logout():
+    token = request.cookies.get('mytoken')
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
+        current_user_id = payload['id']
+        
+        # 시험 진행 중인지 확인
+        user = db.member.find_one({
+            'userid': current_user_id, 
+            'quiz_in_progress': True,
+            'quiz_completed': {'$ne': True}
+        })
+        
+        if user:
+            # 시험 중 로그아웃 - 진행 중 시험 상태 저장
+            # 상태만 변경하고 시험 데이터는 유지
+            db.member.update_one(
+                {'userid': current_user_id},
+                {'$set': {'quiz_in_progress': False}}
+            )
+    except:
+        pass
+        
+    # 로그아웃 처리
     response = make_response(redirect('/'))
     response.delete_cookie('mytoken')
     return response
 
 # 학습 모드 추가
-# app.py에 학습 모드 추가 구현
-
 @app.route('/quiz/learn')
 def quiz_learn():
     token = request.cookies.get('mytoken')
@@ -414,16 +571,6 @@ def quiz_learn():
         return redirect('/')
     except jwt.exceptions.DecodeError:
         return redirect('/')
-
-
-# quiz.html 템플릿에 is_learn 값을 전달받아 판단해서 /quiz/answer 요청 생략하거나 처리 안 함
-
-# quiz.html 내부에서 다음을 조건 추가 (JS 및 HTML)
-# 1. is_learn이 true이면 /quiz/answer로 fetch() 요청하지 않음
-# 2. 결과 보기(next-button.href)가 /quiz/learn 으로 돌아가게 설정 (ex. /quiz/learn_finish 없이)
-# 3. sessionStorage 점수 관련 데이터 초기화해서 순위 반영되지 않도록 유지
-
-
 
 if __name__=='__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
