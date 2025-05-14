@@ -37,6 +37,9 @@
     
     <script>
       document.addEventListener("DOMContentLoaded", function() {
+       
+      
+       
         // 학습 모드 문제 카운트 초기화 (세션 스토리지 사용)
         if (!sessionStorage.getItem('learnQuizCount')) {
           sessionStorage.setItem('learnQuizCount', '0');
@@ -44,6 +47,7 @@
           sessionStorage.setItem('learnWrongQuestions', JSON.stringify([]));
         }
         
+  
         // 현재 풀이한 문제 수 표시
         const solvedCount = parseInt(sessionStorage.getItem('learnQuizCount'));
         document.getElementById('solved-count').textContent = solvedCount;
@@ -128,6 +132,12 @@
         // 학습 중단 버튼 - 홈으로 이동
         document.getElementById("stop-learn-button").addEventListener("click", function(e) {
           // 틀린 문제 정보를 서버에 저장하고 홈으로 이동
+
+          //세션 초기화 부분 추가
+ sessionStorage.removeItem('learnQuizCount');
+  sessionStorage.removeItem('learnWrongQuestions');
+
+
           const wrongQuestions = sessionStorage.getItem('learnWrongQuestions');
           if (wrongQuestions) {
             fetch('/quiz/save_wrong', {

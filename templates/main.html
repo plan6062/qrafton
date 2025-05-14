@@ -39,6 +39,11 @@
   <body class="bg-gray-100 font-sans">
     <script>
       document.addEventListener("DOMContentLoaded", function () {
+       
+        //홈으로 나간 경우 세션 초기화
+       sessionStorage.removeItem('learnQuizCount');
+      sessionStorage.removeItem('learnWrongQuestions');
+       
         // 탭 전환 기능 구현
         const tabButtons = document.querySelectorAll(".tab-button");
         const tabContents = document.querySelectorAll(".tab-content");
