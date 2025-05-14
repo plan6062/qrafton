@@ -21,18 +21,36 @@ db = client.quiz  # 'quiz' 라는 DB
 #필요한 함수선언 부분 ###################################
 def get_user_rank(userid):
     members = list(db.member.find())
-    members.sort(key=lambda x: x.get('score', 0), reverse=True)
-    rank = next((i for i, m in enumerate(members, start=1) if m['userid'] == userid), None)
     
-    # 점수 통계 계산
-    total_score = sum(member.get('score', 0) for member in members)
-    avg_score = total_score / len(members) if members else 0
-    max_score = max((member.get('score', 0) for member in members), default=10)
+    # 퀴즈를 응시한 사용자의 ID 목록 가져오기
+    quiz_taken_users = set(answer['userid'] for answer in db.answers.find({}, {'userid': 1}))
+    
+    # 퀴즈를 응시한 사용자만 필터링
+    quiz_takers = [member for member in members if member['userid'] in quiz_taken_users]
+    
+    # 점수로 정렬
+    quiz_takers.sort(key=lambda x: x.get('score', 0), reverse=True)
+    
+    # 퀴즈 응시자 목록에서의 순위 계산
+    rank = next((i for i, m in enumerate(quiz_takers, start=1) if m['userid'] == userid), None)
+    
+    # 점수 통계 계산 - 퀴즈 응시자만 포함
+    if quiz_takers:
+        total_score = sum(member.get('score', 0) for member in quiz_takers)
+        avg_score = total_score / len(quiz_takers)
+        max_score = max((member.get('score', 0) for member in quiz_takers), default=10)
+    else:
+        avg_score = 0
+        max_score = 10
+    
+    # 사용자가 퀴즈를 응시했는지 확인
+    has_taken_quiz = userid in quiz_taken_users
     
     # 사용자 점수 가져오기
     user_score = next((member.get('score', 0) for member in members if member['userid'] == userid), 0)
     
-    return members, rank, user_score, avg_score, max_score
+    # 전체 멤버 목록 대신 퀴즈 응시자 목록만 반환
+    return quiz_takers, rank, user_score, avg_score, max_score, has_taken_quiz
 
 
 ##############################################
@@ -115,16 +133,13 @@ def main():
         user = db.member.find_one({'userid': current_user_id})
 
         if user:
-            # 수정된 부분: 사용자 정보와 함께 통계 데이터도 가져오기
-            members, rank_position, user_score, avg_score, max_score = get_user_rank(current_user_id)
-
-            # 사용자가 퀴즈를 풀었는지 확인 (answers 컬렉션에서 해당 사용자의 답변 기록 확인)
-            has_taken_quiz = db.answers.find_one({'userid': current_user_id}) is not None
-
+            # 수정된 부분: members 변수가 이제 quiz_takers를 의미함
+            quiz_takers, rank_position, user_score, avg_score, max_score, has_taken_quiz = get_user_rank(current_user_id)
+            
             return render_template(
                 'main.html',
                 nickname=user['nickname'],
-                members=members,
+                members=quiz_takers,  # 퀴즈 응시자 목록
                 rank_position=rank_position,
                 user_id=current_user_id,
                 user_score=user_score,
