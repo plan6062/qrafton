@@ -87,7 +87,7 @@
           </div>
         </div>
         
-        <h1 class="text-2xl font-bold text-text-dark mb-6 text-center">{{ week }}주차 퀴즈 결과</h1>
+        <h1 class="text-2xl font-bold text-text-dark mb-6 text-center">{{ week }} 퀴즈 결과</h1>
         
         <!-- 결과 정보 -->
         <div class="mb-8">
@@ -98,7 +98,7 @@
                 <div class="text-lg">{{ nickname }}</div>
               </div>
               <div class="p-4">
-                <div class="text-text-dark font-bold mb-2">맞은 개수</div>
+                <div class="text-text-dark font-bold mb-2">정답 개수</div>
                 <div class="text-3xl font-bold text-primary">{{ correct_cnt }}</div>
                 <div class="text-gray-500">/ {{ total_cnt }}문제</div>
               </div>
@@ -156,7 +156,7 @@
         <!-- 버튼 -->
         <div class="flex justify-between">
           <!-- <a
-            href="/quiz/start"
+            href="/quiz/start?week={{ week_number }}"
             id="restart-button"
             class="bg-primary hover:bg-green-600 text-text-dark font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
           >

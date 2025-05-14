@@ -425,7 +425,6 @@ def save_wrong():
     return jsonify({'status': 'error'})
 
 # 퀴즈 완료 부분
-# 퀴즈 완료 부분
 @app.route('/quiz/finish')
 def quiz_finish():
     token = request.cookies.get('mytoken')
@@ -454,22 +453,23 @@ def quiz_finish():
             )
             
             nickname = user['nickname']
-            correct_cnt = db.answers.count_documents({
-                'userid': current_user_id, 
-                'is_correct': True
-            })
             
             # 주차 정보 가져오기 (사용자 문서에서)
             week = user.get('current_quiz_week', 0)  # 기본값 0
             score_field = f'score_{week}'
             
-            # 점수 계산
-            user_score = correct_cnt
+            # 현재 세션에서 맞은 문제 수 계산
+            correct_answers = list(db.answers.find({
+                'userid': current_user_id, 
+                'is_correct': True
+            }))
+            
+            correct_cnt = len(correct_answers)
             
             # 주차별 점수 저장 - 기존 'score' 필드도 유지 (호환성)
             update_data = {
-                'score': user_score,  # 기존 필드 유지
-                score_field: user_score  # 주차별 점수 필드
+                'score': correct_cnt,  # 기존 필드 유지
+                score_field: correct_cnt  # 주차별 점수 필드
             }
             
             db.member.update_one(
