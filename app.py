@@ -205,6 +205,11 @@ def quiz_answer():
         user = db.member.find_one({'userid': current_user_id})
         
         if user:
+            
+            # 학습 모드라면 score 반영도, 기록도 하지 않음
+            if data.get('mode') == 'learn':
+                return jsonify({'status': 'success', 'message': 'learn mode - not recorded'})
+          
             if data.get('is_correct'):
                 # 정답인 경우 점수 증가
                 db.member.update_one(
