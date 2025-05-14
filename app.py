@@ -167,32 +167,79 @@ def quiz_start():
         
         if not user:
             return redirect('/')
-        
-        # 1. 유저가 푼 문제의 question_id 목록 가져오기
-        answered_question_ids = db.answers.find(
-            {'userid': current_user_id},
-            {'question_id': 1, '_id': 0}
-        )
-        answered_ids = {a['question_id'] for a in answered_question_ids}
 
-        # 2. 아직 풀지 않은 퀴즈만 필터링
+        # 이미 퀴즈에 응시했는지 확인
+        already_taken = db.answers.find_one({'userid': current_user_id})
+        if already_taken:
+            return redirect('/quiz/finish')  # 응시했으면 결과 페이지로 보냄
+
+        # 문제 5개를 랜덤으로 선택
         all_quizzes = list(db.quiz_list.find())
-        unanswered_quizzes = [q for q in all_quizzes if str(q['_id']) not in answered_ids]
+        selected_quizzes = random.sample(all_quizzes, 5)
 
-        if not unanswered_quizzes:
-            return render_template("quiz_finish.html", nickname=user['nickname'], correct_cnt=user.get('score', 0),
-                                   my_rank=None, wrong_questions=user.get('wrong_questions', []),
-                                   message="모든 문제를 다 푸셨습니다!")
+        # 기존 임시 퀴즈 삭제 후 새로 저장
+        db.temp_quiz.delete_many({'userid': current_user_id})
+        for quiz in selected_quizzes:
+            db.temp_quiz.insert_one({
+                'userid': current_user_id,
+                'question_id': str(quiz['_id']),
+                'question': quiz['question'],
+                'answer': quiz['answer']
+            })
 
-        # 3. 아직 풀지 않은 퀴즈 중 랜덤 선택
-        quiz = random.choice(unanswered_quizzes)
-
-        return render_template("quiz.html", quiz=quiz, nickname=user['nickname'])
+        # 첫 번째 문제 페이지로 이동
+        return redirect('/quiz/play/0')
 
     except jwt.ExpiredSignatureError:
         return redirect('/')
     except jwt.exceptions.DecodeError:
         return redirect('/')
+@app.route('/quiz/play/<int:index>')
+def quiz_play(index):
+    token = request.cookies.get('mytoken')
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
+        current_user_id = payload['id']
+        user = db.member.find_one({'userid': current_user_id})
+
+        quizzes = list(db.temp_quiz.find({'userid': current_user_id}))
+        if index >= len(quizzes):
+            return redirect('/quiz/finish')
+
+        quiz = quizzes[index]
+        return render_template("quiz.html", quiz=quiz, index=index, nickname=user['nickname'])
+
+    except:
+        return redirect('/')
+
+@app.route('/quiz/submit', methods=['POST'])
+def quiz_submit():
+    token = request.cookies.get('mytoken')
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
+        current_user_id = payload['id']
+
+        index = int(request.form['index'])
+        question_id = request.form['question_id']
+        user_answer = request.form['user_answer']
+
+        quiz = db.temp_quiz.find_one({'userid': current_user_id, 'question_id': question_id})
+        correct = user_answer.strip().lower() == quiz['answer'].strip().lower()
+
+        db.answers.insert_one({
+            'userid': current_user_id,
+            'question_id': question_id,
+            'user_answer': user_answer,
+            'correct': correct
+        })
+
+        return redirect(f'/quiz/play/{index + 1}')
+
+    except:
+        return redirect('/')
+
+    
+    
 # 퀴즈 답변 제출 처리
 @app.route('/quiz/answer', methods=['POST'])
 def quiz_answer():

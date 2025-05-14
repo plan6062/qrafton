@@ -36,6 +36,10 @@
     <title>QuizWeek - 퀴즈</title>
     
     <script>
+
+      //현재 문제 인덱스
+      const currentIndex = {{ index }}; 
+
       document.addEventListener("DOMContentLoaded", function() {
         // 문제 카운트 초기화 (세션 스토리지 사용)
         if (!sessionStorage.getItem('quizCount')) {
@@ -57,7 +61,7 @@
           const userAnswer = document.getElementById("user-answer").value.trim();
           const correctAnswer = document.getElementById("correct-answer").value.trim();
           const questionId = document.getElementById("question-id").value;
-          const questionText = document.querySelector(".bg-gray-50 p").textContent;
+          const questionText = document.querySelector(".question-text").textContent;
           const resultDiv = document.getElementById("result");
           const nextButton = document.getElementById("next-button");
           
@@ -115,16 +119,12 @@
           document.getElementById("submit-button").classList.add("hidden");
           
           // 문제 카운트 확인하여 다음 동작 결정
-          const newCount = currentCount + 1;
-          
-          if (newCount > 5) {
-            // 5문제 완료 시 결과 페이지로 이동
+          if (currentIndex + 1 >= 5) {
             nextButton.href = "/quiz/finish";
             nextButton.textContent = "결과 보기";
           } else {
-            // 아직 5문제 미만일 경우 다음 문제로
-            nextButton.href = "/quiz/start";
-            nextButton.textContent = "다음 문제";
+            nextButton.href = `/quiz/play/${currentIndex + 1}`;
+            nextButton.textContent = `다음 문제 (${currentIndex + 2}/5)`;
           }
           
           // 다음 문제 버튼 표시
@@ -196,7 +196,7 @@
         
         <!-- 질문 -->
         <div class="bg-black p-6 rounded-lg mb-6 border-2 border-primary">
-          <p class="text-xl text-primary">{{ quiz.question }}</p>
+          <p class="text-xl text-primary question-text">{{ quiz.question }}</p>
         </div>
         
         <!-- 답변 폼 -->
