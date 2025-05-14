@@ -172,33 +172,28 @@ def quiz_start():
         payload = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
         current_user_id = payload['id']
         user = db.member.find_one({'userid': current_user_id})
-        
+
         if not user:
             return redirect('/')
 
         # 이미 퀴즈를 완료했는지 확인
-        completed = db.member.find_one({
-            'userid': current_user_id,
-            'quiz_completed': True
-        })
-        
-        if completed:
-            return redirect('/quiz/finish')  # 완료했으면 결과 페이지로 보냄
-        
+        if user.get('quiz_completed', False):
+            return redirect('/quiz/finish')
+
         # 진행 중인 시험이 있는지 확인
         quiz_started = db.temp_quiz.find_one({'userid': current_user_id})
-        
         if quiz_started:
-            # 진행 중인 시험이 있으면 마지막 문제로 이동
             last_index = user.get('last_question_index', 0)
             return redirect(f'/quiz/play/{last_index}')
-        
-        # 아직 시험을 시작하지 않은 경우만 새 시험 생성
-        # 문제 5개를 랜덤으로 선택
+
+        # 👉 week 파라미터는 받아오되 무시
+        week = request.args.get('week', default=0, type=int)
+
+        # ✅ week와 상관없이 quiz_list에서 무작위 5문제 추출
         all_quizzes = list(db.quiz_list.find())
         selected_quizzes = random.sample(all_quizzes, 5)
 
-        # 새 퀴즈 저장
+        # temp_quiz에 저장
         for quiz in selected_quizzes:
             db.temp_quiz.insert_one({
                 'userid': current_user_id,
@@ -208,19 +203,17 @@ def quiz_start():
                 'options': quiz.get('options'),
                 'answered': False
             })
-        
-        # 퀴즈 진행 상태 초기화
+
         db.member.update_one(
             {'userid': current_user_id},
             {'$set': {
                 'quiz_in_progress': True,
                 'quiz_start_time': datetime.datetime.now(),
                 'last_question_index': 0,
-                'quiz_completed': False  # 명시적으로 완료되지 않음을 표시
+                'quiz_completed': False
             }}
         )
-        
-        # 첫 번째 문제 페이지로 이동
+
         return redirect('/quiz/play/0')
 
     except jwt.ExpiredSignatureError:
@@ -588,6 +581,58 @@ def quiz_learn():
         return redirect('/')
     except jwt.exceptions.DecodeError:
         return redirect('/')
+
+
+@app.route('/select_week')
+def select_week():
+    token = request.cookies.get('mytoken')
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
+        current_user_id = payload['id']
+        user = db.member.find_one({'userid': current_user_id})
+        if not user:
+            return redirect('/')
+
+        # 🔑 모드 구분
+        mode = request.args.get('mode', 'test')
+
+        if mode == 'learn':
+            return render_template('select_week_learn.html', nickname=user['nickname'], mode='learn')
+        else:
+            return render_template('select_week.html', nickname=user['nickname'], mode='test')
+
+    except jwt.ExpiredSignatureError:
+        return redirect('/')
+    except jwt.exceptions.DecodeError:
+        return redirect('/')
+
+
+@app.route('/quiz/week/<int:week>')
+def quiz_week_learn(week):
+    token = request.cookies.get('mytoken')
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
+        current_user_id = payload['id']
+        user = db.member.find_one({'userid': current_user_id})
+        if not user:
+            return redirect('/')
+
+        # 전체 퀴즈 목록 중에서 랜덤 1개 선택 (현재는 week 관계 없이)
+        all_quizzes = list(db.quiz_list.find())
+        if not all_quizzes:
+            return "퀴즈가 존재하지 않습니다."
+
+        quiz = random.choice(all_quizzes)
+
+        return render_template("quiz_learn.html", quiz=quiz, nickname=user['nickname'], is_learn=True)
+    
+    except jwt.ExpiredSignatureError:
+        return redirect('/')
+    except jwt.exceptions.DecodeError:
+        return redirect('/')
+
+
+
 
 if __name__=='__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
