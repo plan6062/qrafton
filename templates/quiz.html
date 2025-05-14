@@ -52,6 +52,12 @@
         const currentCount = parseInt(sessionStorage.getItem('quizCount'));
         document.getElementById('question-count').textContent = currentCount;
         
+        // 로고 클릭 시 경고창 표시
+        document.getElementById('logo-link').addEventListener('click', function(e) {
+          e.preventDefault();
+          alert("시험 중에는 홈 화면으로 돌아갈 수 없습니다!");
+        });
+        
         // 답변 제출 처리
         const answerForm = document.getElementById("answer-form");
         
@@ -131,6 +137,7 @@
           nextButton.classList.remove("hidden");
           
           // 문제 카운트 증가
+          const newCount = currentCount + 1;
           sessionStorage.setItem('quizCount', newCount.toString());
         });
         
@@ -159,7 +166,7 @@
     <nav class="bg-primary text-text-dark shadow-lg">
       <div class="container mx-auto px-4 py-3">
         <div class="flex justify-between items-center">
-          <a href="/main" class="text-xl font-bold hover:text-gray-700">QuizWeek</a>
+          <a href="#" id="logo-link" class="text-xl font-bold hover:text-gray-700">QuizWeek</a>
           <div class="space-x-4 flex items-center">
             {% if nickname %}
             <span class="text-gray-700 mr-2">{{ nickname }}님 환영합니다</span>
