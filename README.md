@@ -34,11 +34,8 @@ python -m venv venv
 venv\Scripts\activate
 # macOS/Linux:
 source venv/bin/activate
-
-# 깃배시:
+# GitBash:
 source venv/scripts/activate
-
-*가성 환경 비활성화 : deactivate
 
 # 4. 의존성 설치
 pip install -r requirements.txt
@@ -52,8 +49,8 @@ npm run build-css
 # 7. 새 터미널에서 (가상환경 활성화 후)
 python app.py
 
-# 8. 주소 접속
+# 로컬 주소:
 http://localhost:5000/
 
-# 9. EC2 주소:
+# EC2 주소:
 http://3.39.194.140:5000/
