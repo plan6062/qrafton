@@ -157,72 +157,74 @@ def main():
 ####################################################################
 
 # 퀴즈 시작 부분
-# 학습 모드
-@app.route('/quiz/learn_mode')
-def quiz_learn_mode():
-    return render_quiz_mode(mode='quiz')
-
-#  시험 모드
-@app.route('/quiz/exam_mode')
-def quiz_exam_mode():
-    return render_quiz_mode(mode='exam')
-
-# 공통 퀴즈 렌더링 함수
-
-def render_quiz_mode(mode):
+@app.route('/quiz/start')
+def quiz_start():
     token = request.cookies.get('mytoken')
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
         current_user_id = payload['id']
         user = db.member.find_one({'userid': current_user_id})
-
+        
         if not user:
             return redirect('/')
+        
+        # 1. 유저가 푼 문제의 question_id 목록 가져오기
+        answered_question_ids = db.answers.find(
+            {'userid': current_user_id},
+            {'question_id': 1, '_id': 0}
+        )
+        answered_ids = {a['question_id'] for a in answered_question_ids}
 
-        quiz_list = list(db.quiz_list.find())
-        quiz = random.choice(quiz_list)
+        # 2. 아직 풀지 않은 퀴즈만 필터링
+        all_quizzes = list(db.quiz_list.find())
+        unanswered_quizzes = [q for q in all_quizzes if str(q['_id']) not in answered_ids]
 
-        return render_template("quiz.html", quiz=quiz, nickname=user['nickname'], mode=mode)
+        if not unanswered_quizzes:
+            return render_template("quiz_finish.html", nickname=user['nickname'], correct_cnt=user.get('score', 0),
+                                   my_rank=None, wrong_questions=user.get('wrong_questions', []),
+                                   message="모든 문제를 다 푸셨습니다!")
+
+        # 3. 아직 풀지 않은 퀴즈 중 랜덤 선택
+        quiz = random.choice(unanswered_quizzes)
+
+        return render_template("quiz.html", quiz=quiz, nickname=user['nickname'])
+
     except jwt.ExpiredSignatureError:
         return redirect('/')
     except jwt.exceptions.DecodeError:
         return redirect('/')
-
-# 퀴즈 제출 처리 수정: mode 함께 처리
+# 퀴즈 답변 제출 처리
 @app.route('/quiz/answer', methods=['POST'])
 def quiz_answer():
     data = request.json
     token = request.cookies.get('mytoken')
-
+    
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
         current_user_id = payload['id']
         user = db.member.find_one({'userid': current_user_id})
-
+        
         if user:
-            is_correct = data.get('is_correct')
-            mode = data.get('mode', 'exam')  # 기본값은 시험 모드
-
-            if is_correct and mode == 'exam':
+            if data.get('is_correct'):
+                # 정답인 경우 점수 증가
                 db.member.update_one(
                     {'userid': current_user_id},
                     {'$inc': {'score': 1}}
                 )
-
+            
+            # 답변 기록 저장
             db.answers.insert_one({
                 'userid': current_user_id,
                 'question_id': data.get('question_id'),
-                'is_correct': is_correct,
-                'mode': mode,
+                'is_correct': data.get('is_correct'),
                 'timestamp': datetime.datetime.now()
             })
-
+            
             return jsonify({'status': 'success'})
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)})
-
+    
     return jsonify({'status': 'error'})
-
 
 # 틀린 문제 저장
 @app.route('/quiz/save_wrong', methods=['POST'])
