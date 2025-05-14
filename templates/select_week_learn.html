@@ -53,11 +53,11 @@
       
       <div class="grid grid-cols-2 md:grid-cols-4 gap-6 justify-center">
         {% for week in range(4) %}
-          <a href="/quiz/start?week={{ week }}"
-             class="bg-black hover:bg-gray-800 text-primary font-bold py-6 px-8 rounded-lg text-xl shadow-lg transition duration-300 text-center block">
-            Week {{ week }}
-          </a>
-        {% endfor %}
+          <a href="/quiz/week/{{ week }}?mode=learn"
+       class="bg-primary hover:bg-green-600 text-text-dark font-bold py-6 px-8 rounded-lg text-xl shadow-lg transition duration-300 text-center block">
+      Week {{ week }}
+    </a>
+    {% endfor %}
       </div>
     </div>
     
