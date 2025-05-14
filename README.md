@@ -1,7 +1,6 @@
 # 📝 퀴즈를 통한 복습 서비스웹 QUIZWEEK
 
 ![노란색 흰색 심플한 마케팅 프로젝트 프레젠테이션](https://github.com/user-attachments/assets/647075d4-7405-41d8-93ab-975fecd564c6)
-● 배포 URL : http://3.39.194.140:5000/
 
 # 프로젝트 소개
 ● QUIZWEEK는 배운 내용을 퀴즈로 복습할 수 있는 웹 서비스입니다.  
@@ -22,6 +21,9 @@
 # 4. 신경 쓴 부분 
 
 # 5. 페이지별 기능
+![image](https://github.com/user-attachments/assets/2d3a63db-17bc-458d-97fa-b958fd8ef33b)
+<img src="https://github.com/user-attachments/assets/2d3a63db-17bc-458d-97fa-b958fd8ef33b.png" width="200" height="200"/>
+
 # 1. 저장소 클론
 git clone [저장소URL]
 cd [프로젝트폴더]
