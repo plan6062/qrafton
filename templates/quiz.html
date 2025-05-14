@@ -57,7 +57,7 @@
           const userAnswer = document.getElementById("user-answer").value.trim();
           const correctAnswer = document.getElementById("correct-answer").value.trim();
           const questionId = document.getElementById("question-id").value;
-          const questionText = document.querySelector(".question-text").textContent;
+          const questionText = document.querySelector(".bg-gray-50 p").textContent;
           const resultDiv = document.getElementById("result");
           const nextButton = document.getElementById("next-button");
           
@@ -196,7 +196,7 @@
         
         <!-- 질문 -->
         <div class="bg-black p-6 rounded-lg mb-6 border-2 border-primary">
-          <p class="text-xl text-primary question-text">{{ quiz.question }}</p>
+          <p class="text-xl text-primary">{{ quiz.question }}</p>
         </div>
         
         <!-- 답변 폼 -->
