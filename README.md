@@ -32,7 +32,10 @@
  ┣ register.html <br/>
  ┣ select_week.html <br/>
  ┗ select_week_learn.html <br/>
-📦venv <br/>
+📦venv  
+┣ 📂Include  
+┣ 📂Lib  
+📂Scripts <br/>
 .gitattributes <br/>
 .gitignore <br/>
 app.py <br/>
