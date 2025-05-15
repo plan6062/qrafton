@@ -18,10 +18,10 @@
 ● 서비스 배포 환경 : AWS
 
 # 1. 프로젝트 구조
-📦node_modules
-📦static
- ┗📂css
- ┃ ┣ main.css
+📦node_modules  
+📦static  
+ ┗📂css<br/>
+ ┃ ┣ main.css<br/>
  ┃ ┗ tailwind.css
 📦templates
  ┣ index.html
