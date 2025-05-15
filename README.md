@@ -1,9 +1,9 @@
-# 📝 퀴즈를 통한 복습 서비스웹 QUIZWEEK
+# 📝 퀴즈를 통한 복습 서비스웹 Q래프톤
 
 ![노란색 흰색 심플한 마케팅 프로젝트 프레젠테이션](https://github.com/user-attachments/assets/647075d4-7405-41d8-93ab-975fecd564c6)
 
 # 프로젝트 소개
-● QUIZWEEK는 배운 내용을 퀴즈로 복습할 수 있는 웹 서비스입니다.  
+● Q래프톤은은 배운 내용을 퀴즈로 복습할 수 있는 웹 서비스입니다.  
 ● 틀린 문제에 대한 답을 바로 확인할 수 있습니다.  
 ● 로그인/회원가입 기능을 통해 사용자간의 순위를 비교할 수 있습니다.
 
@@ -14,13 +14,7 @@
 ● 협업 툴 : Github  
 ● 서비스 배포 환경 : AWS
 
-# 2. 기술적 챌린지
-
-# 3. 프로젝트 구조
-
-# 4. 신경 쓴 부분 
-
-# 5. 페이지별 기능
+# 2. 페이지별 기능
 ![image](https://github.com/user-attachments/assets/2d3a63db-17bc-458d-97fa-b958fd8ef33b)
 <img src="https://github.com/user-attachments/assets/2d3a63db-17bc-458d-97fa-b958fd8ef33b.png" width="200" height="200"/>
 
