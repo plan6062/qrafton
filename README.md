@@ -3,8 +3,11 @@
 ![Image](https://github.com/user-attachments/assets/9ab06e5a-262d-4b9e-8aa8-e7a79e58453d)
 
 # 프로젝트 소개
-● Q래프톤은 배운 내용을 퀴즈로 복습할 수 있는 웹 서비스입니다.  
+● Q래프톤은 매주 배운 내용을 퀴즈로 복습할 수 있는 웹 서비스입니다.  
 ● 틀린 문제에 대한 답을 바로 확인할 수 있습니다.  
+● 시험모드와 학습모드를 통한 학습을 할 수 있습니다.
+  ○시험모드는 주차별로 한번씩만 응시가능하며, 순위를 확인 할 수 있습니다.
+  ○학습모드는 사용자가 학습을 중단하기 전까지 반복 학습이 가능합니다.
 ● 로그인/회원가입 기능을 통해 사용자간의 순위를 비교할 수 있습니다.
 
 # 0. 개발 환경
@@ -14,6 +17,35 @@
 ● 협업 툴 : Github  
 ● 서비스 배포 환경 : AWS
 
+# 1. 프로젝트 구조
+📦node_modules
+📦static
+ ┗📂css
+ ┃ ┣ main.css
+ ┃ ┗ tailwind.css
+📦templates
+ ┣ index.html
+ ┣ main.html
+ ┣ quiz.html
+ ┣ quiz_finish.html
+ ┣ quiz_learn.html
+ ┣ register.html
+ ┣ select_week.html
+ ┗ select_week_learn.html
+📦venv
+.gitattributes
+.gitignore
+app.py
+insert_quiz_w1.py
+insert_quiz_w2.py
+insert_quiz_w3.py
+insert_quiz.py
+package.json
+README.md
+requirements.txt
+tailwind.config.js
+
+//실행 전 
 # 1. 저장소 클론
 git clone [저장소URL]
 cd [프로젝트폴더]
