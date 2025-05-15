@@ -7,16 +7,12 @@
 ● 틀린 문제에 대한 답을 바로 확인할 수 있습니다.  
 ● 로그인/회원가입 기능을 통해 사용자간의 순위를 비교할 수 있습니다.
 
-# 1. 개발 환경
+# 0. 개발 환경
 ● Front-end : HTML, tailwindcss, Jinja  
 ● Back-end : Flask, Jinja  
 ● 데이터베이스 : mongo DB  
 ● 협업 툴 : Github  
 ● 서비스 배포 환경 : AWS
-
-# 2. 페이지별 기능
-![image](https://github.com/user-attachments/assets/2d3a63db-17bc-458d-97fa-b958fd8ef33b)
-<img src="https://github.com/user-attachments/assets/2d3a63db-17bc-458d-97fa-b958fd8ef33b.png" width="200" height="200"/>
 
 # 1. 저장소 클론
 git clone [저장소URL]
